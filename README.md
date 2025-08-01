@@ -5,7 +5,7 @@ A comprehensive PHP SDK for interacting with the DVB Core Remote API. This SDK p
 ## Requirements
 
 - PHP 8.2 or higher
-- Laravel 10.x or 11.x
+- Laravel 10.x, 11.x, 12.x
 - Composer
 
 ## Installation

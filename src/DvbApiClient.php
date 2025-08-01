@@ -55,9 +55,29 @@ class DvbApiClient
     ) {
         $this->httpClient = $httpClient ?? new Client();
         $this->logger = $logger ?? new NullLogger();
-        $this->apiKey = $apiKey;
-        $this->baseDomain = $baseDomain;
-        $this->protocol = $protocol;
+        $this->setApiKey($apiKey);
+        $this->setBaseDomain($baseDomain);
+        $this->setProtocol($protocol);
+    }
+
+    /**
+     * Create a new DvbApiClient instance with a specific API key and domain.
+     *
+     * @param string $apiKey
+     * @param string $baseDomain
+     * @param string $protocol
+     * @param \GuzzleHttp\ClientInterface|null $httpClient
+     * @param \Psr\Log\LoggerInterface|null $logger
+     * @return static
+     */
+    public static function newClient(
+        string $apiKey,
+        string $baseDomain,
+        string $protocol = 'https',
+        ?ClientInterface $httpClient = null,
+        ?LoggerInterface $logger = null
+    ): self {
+        return new static($httpClient, $logger, $apiKey, $baseDomain, $protocol);
     }
 
     /**
@@ -214,6 +234,42 @@ class DvbApiClient
     public function getProtocol(): string
     {
         return $this->protocol;
+    }
+
+    /**
+     * Set the API key.
+     *
+     * @param string $apiKey
+     * @return $this
+     */
+    public function setApiKey(string $apiKey): self
+    {
+        $this->apiKey = $apiKey;
+        return $this;
+    }
+
+    /**
+     * Set the base domain.
+     *
+     * @param string $baseDomain
+     * @return $this
+     */
+    public function setBaseDomain(string $baseDomain): self
+    {
+        $this->baseDomain = $baseDomain;
+        return $this;
+    }
+
+    /**
+     * Set the protocol.
+     *
+     * @param string $protocol
+     * @return $this
+     */
+    public function setProtocol(string $protocol): self
+    {
+        $this->protocol = $protocol;
+        return $this;
     }
 
     /**

@@ -43,11 +43,16 @@ DVB_API_PROTOCOL=https
 ```php
 use DVB\Core\SDK\DvbApiClient;
 
-// Create a new client instance
-$client = new DvbApiClient();
-
-// Or resolve from Laravel container
+// Create a new client instance from Laravel's service container (uses config/services.php)
 $client = app(DvbApiClient::class);
+
+// Or, create a new client instance manually
+$client = DvbApiClient::newClient('your_api_key', 'api.dvb.com');
+
+// You can also set the credentials after instantiation
+$client = new DvbApiClient();
+$client->setApiKey('your_api_key')
+       ->setBaseDomain('api.dvb.com');
 
 // Get user profile
 $profile = $client->getProfile();

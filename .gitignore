@@ -1,1 +1,6 @@
 /.phpunit.result.cache
+/.claude/
+/DVB_SDK_Development_Guide.md
+
+.idea/
+/vendor/

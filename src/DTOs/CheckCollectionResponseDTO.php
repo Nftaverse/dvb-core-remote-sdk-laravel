@@ -2,13 +2,15 @@
 
 namespace DVB\Core\SDK\DTOs;
 
-class CheckCollectionResponseDTO
+class CheckCollectionResponseDTO extends ApiResponse
 {
-    public function __construct(
-        public readonly int $code,
-        public readonly string $message,
-        public readonly ?bool $data,
-    ) {
+    /** @var bool|null */
+    public mixed $data;
+
+    public function __construct(int $code, string $message, ?bool $data = null)
+    {
+        parent::__construct($code, $message);
+        $this->data = $data;
     }
 
     public static function fromArray(array $data): self
@@ -16,7 +18,7 @@ class CheckCollectionResponseDTO
         return new self(
             $data['code'] ?? 0,
             $data['message'] ?? '',
-            $data['data'] ?? null,
+            $data['data']['isValid'] ?? null,
         );
     }
 }

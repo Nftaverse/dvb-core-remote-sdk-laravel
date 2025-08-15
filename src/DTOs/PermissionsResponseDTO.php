@@ -4,25 +4,36 @@ namespace DVB\Core\SDK\DTOs;
 
 class PermissionsResponseDTO
 {
+    public int $code;
+    public string $message;
+    /** @var string[]|PermissionDTO[]|null */
+    public ?array $data;
+
     /**
      * @param int $code
      * @param string $message
-     * @param PermissionDTO[]|null $data
+     * @param string[]|PermissionDTO[]|null $data
      */
-    public function __construct(
-        public readonly int $code,
-        public readonly string $message,
-        public readonly ?array $data,
-    ) {
+    public function __construct(int $code, string $message, ?array $data)
+    {
+        $this->code = $code;
+        $this->message = $message;
+        $this->data = $data;
     }
 
     public static function fromArray(array $data): self
     {
         $permissions = null;
-        if (isset($data['data']) && is_array($data['data'])) {
+        if (isset($data['data']['permissions']) && is_array($data['data']['permissions'])) {
             $permissions = [];
-            foreach ($data['data'] as $permissionData) {
-                $permissions[] = PermissionDTO::fromArray($permissionData);
+            foreach ($data['data']['permissions'] as $permissionData) {
+                if (is_array($permissionData)) {
+                    // If it's an array, assume it's a PermissionDTO data array
+                    $permissions[] = PermissionDTO::fromArray($permissionData);
+                } else {
+                    // If it's not an array, keep it as is (e.g., string)
+                    $permissions[] = $permissionData;
+                }
             }
         }
 

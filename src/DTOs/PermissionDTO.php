@@ -4,12 +4,17 @@ namespace DVB\Core\SDK\DTOs;
 
 class PermissionDTO
 {
-    public function __construct(
-        public readonly string $id,
-        public readonly string $name,
-        public readonly string $description,
-        public readonly ?string $createdAt = null,
-    ) {
+    public string $id;
+    public string $name;
+    public ?string $description;
+    public ?string $createdAt;
+
+    public function __construct(string $id, string $name, ?string $description, ?string $createdAt = null)
+    {
+        $this->id = $id;
+        $this->name = $name;
+        $this->description = $description;
+        $this->createdAt = $createdAt;
     }
 
     public static function fromArray(array $data): self
@@ -17,7 +22,7 @@ class PermissionDTO
         return new self(
             $data['id'] ?? '',
             $data['name'] ?? '',
-            $data['description'] ?? '',
+            $data['description'] ?? null,
             $data['createdAt'] ?? null,
         );
     }

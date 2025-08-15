@@ -2,13 +2,20 @@
 
 namespace DVB\Core\SDK\DTOs;
 
-class NftListResponseDTO
+class NftListResponseDTO implements PaginatedResponseInterface
 {
+    public int $code;
+    public string $message;
+    public ?PaginatedNftDataDTO $data;
+
     public function __construct(
-        public readonly int $code,
-        public readonly string $message,
-        public readonly ?PaginatedNftDataDTO $data,
+        int $code,
+        string $message,
+        ?PaginatedNftDataDTO $data,
     ) {
+        $this->code = $code;
+        $this->message = $message;
+        $this->data = $data;
     }
 
     public static function fromArray(array $data): self
@@ -18,5 +25,20 @@ class NftListResponseDTO
             $data['message'] ?? '',
             isset($data['data']) ? PaginatedNftDataDTO::fromArray($data['data']) : null,
         );
+    }
+
+    public function getCursor(): ?string
+    {
+        return $this->data?->cursor;
+    }
+
+    public function hasMore(): bool
+    {
+        return $this->data?->hasMore ?? false;
+    }
+
+    public function getItems(): ?array
+    {
+        return $this->data?->items;
     }
 }

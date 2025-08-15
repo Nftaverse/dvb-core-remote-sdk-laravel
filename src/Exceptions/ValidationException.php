@@ -10,14 +10,24 @@ class ValidationException extends DvbApiException
      * @param string $message
      * @param int|null $code
      * @param array|null $data
-     * @param \Exception|null $previous
+     * @param \Throwable|null $previous
      */
     public function __construct(
         string $message = "Validation failed",
         ?int $code = null,
         ?array $data = null,
-        ?Exception $previous = null
+        ?\Throwable $previous = null
     ) {
         parent::__construct($message, $code, $data, $previous);
+    }
+
+    /**
+     * Get the validation errors.
+     *
+     * @return array|null
+     */
+    public function getErrors(): ?array
+    {
+        return $this->getErrorData();
     }
 }

@@ -8,7 +8,7 @@ class DvbApiException extends Exception
 {
     protected ?int $errorCode;
     protected ?array $errorData;
-    protected ?Exception $previousException;
+    protected ?\Throwable $previousException;
 
     /**
      * Create a new DvbApiException instance.
@@ -16,13 +16,13 @@ class DvbApiException extends Exception
      * @param string $message
      * @param int|null $code
      * @param array|null $data
-     * @param \Exception|null $previous
+     * @param \Throwable|null $previous
      */
     public function __construct(
         string $message = "",
         ?int $code = null,
         ?array $data = null,
-        ?Exception $previous = null
+        ?\Throwable $previous = null
     ) {
         $this->errorCode = $code;
         $this->errorData = $data;
@@ -54,9 +54,9 @@ class DvbApiException extends Exception
     /**
      * Get the previous exception.
      *
-     * @return \Exception|null
+     * @return \Throwable|null
      */
-    public function getPreviousException(): ?Exception
+    public function getPreviousException(): ?\Throwable
     {
         return $this->previousException;
     }

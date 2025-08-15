@@ -2,9 +2,13 @@
 
 namespace DVB\Core\SDK;
 
+use DVB\Core\SDK\Exceptions\ValidationException;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\ServerException;
+use JsonException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use DVB\Core\SDK\Exceptions\DvbApiException;
@@ -36,28 +40,36 @@ class DvbApiClient
     protected string $apiKey;
     protected string $baseDomain;
     protected string $protocol;
+    protected int $timeout;
+    protected int $connectTimeout;
 
     /**
      * Create a new DvbApiClient instance.
      *
-     * @param \GuzzleHttp\ClientInterface|null $httpClient
-     * @param \Psr\Log\LoggerInterface|null $logger
+     * @param ClientInterface|null $httpClient
+     * @param LoggerInterface|null $logger
      * @param string $apiKey
      * @param string $baseDomain
      * @param string $protocol
+     * @param int $timeout
+     * @param int $connectTimeout
      */
     public function __construct(
         ?ClientInterface $httpClient = null,
         ?LoggerInterface $logger = null,
         string $apiKey = '',
-        string $baseDomain = 'api.dvb.com',
-        string $protocol = 'https'
+        string $baseDomain = 'dev-epoch.nft-investment.io',
+        string $protocol = 'https',
+        int $timeout = 30,
+        int $connectTimeout = 10
     ) {
         $this->httpClient = $httpClient ?? new Client();
         $this->logger = $logger ?? new NullLogger();
         $this->setApiKey($apiKey);
         $this->setBaseDomain($baseDomain);
         $this->setProtocol($protocol);
+        $this->timeout = $timeout;
+        $this->connectTimeout = $connectTimeout;
     }
 
     /**
@@ -66,8 +78,10 @@ class DvbApiClient
      * @param string $apiKey
      * @param string $baseDomain
      * @param string $protocol
-     * @param \GuzzleHttp\ClientInterface|null $httpClient
-     * @param \Psr\Log\LoggerInterface|null $logger
+     * @param ClientInterface|null $httpClient
+     * @param LoggerInterface|null $logger
+     * @param int $timeout
+     * @param int $connectTimeout
      * @return static
      */
     public static function newClient(
@@ -75,10 +89,13 @@ class DvbApiClient
         string $baseDomain,
         string $protocol = 'https',
         ?ClientInterface $httpClient = null,
-        ?LoggerInterface $logger = null
+        ?LoggerInterface $logger = null,
+        int $timeout = 30,
+        int $connectTimeout = 10
     ): self {
-        return new static($httpClient, $logger, $apiKey, $baseDomain, $protocol);
+        return new static($httpClient, $logger, $apiKey, $baseDomain, $protocol, $timeout, $connectTimeout);
     }
+
 
     /**
      * Get the base URL for API requests.
@@ -87,7 +104,7 @@ class DvbApiClient
      */
     protected function getBaseUrl(): string
     {
-        return "{$this->protocol}://{$this->baseDomain}";
+        return "{$this->protocol}://{$this->baseDomain}/api/remote/v1";
     }
 
     /**
@@ -110,14 +127,17 @@ class DvbApiClient
      *
      * @param string $endpoint
      * @param array $data
+     * @param array $query
      * @return array
      * @throws DvbApiException
      */
-    protected function post(string $endpoint, array $data = []): array
+    protected function post(string $endpoint, array $data = [], array $query = []): array
     {
-        return $this->request('POST', $endpoint, [
-            'json' => $data,
-        ]);
+        $options = ['json' => $data];
+        if (!empty($query)) {
+            $options['query'] = $query;
+        }
+        return $this->request('POST', $endpoint, $options);
     }
 
     /**
@@ -161,25 +181,46 @@ class DvbApiClient
         try {
             $url = $this->getBaseUrl() . '/' . ltrim($endpoint, '/');
             
-            $options = array_merge($options, [
+            $options = array_merge_recursive($options, [
                 'headers' => [
                     'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
                     'Authorization' => 'Bearer ' . $this->apiKey,
                 ],
+                'timeout' => $this->timeout,
+                'connect_timeout' => $this->connectTimeout,
             ]);
+
+            if (!isset($options['headers']['Content-Type'])) {
+                $options['headers']['Content-Type'] = 'application/json';
+            }
 
             $this->logger->info("Making {$method} request to {$url}", $options);
 
             $response = $this->httpClient->request($method, $url, $options);
             $body = $response->getBody()->getContents();
-            $data = json_decode($body, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new DvbApiException('Invalid JSON response: ' . json_last_error_msg());
+            
+            try {
+                $data = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+            } catch (JsonException $e) {
+                throw new DvbApiException('Invalid JSON response from API', $response->getStatusCode(), [], $e);
             }
 
             return $data ?: [];
+        } catch (ClientException $e) {
+            if ($e->getResponse()->getStatusCode() === 422) {
+                $errorBody = json_decode($e->getResponse()->getBody()->getContents(), true);
+                throw new ValidationException(
+                    $errorBody['message'] ?? 'Validation failed',
+                    $e->getCode(),
+                    $errorBody['errors'] ?? [],
+                    $e
+                );
+            }
+            $this->logger->error("API Client Exception: " . $e->getMessage());
+            throw new DvbApiException("API request failed: " . $e->getMessage(), $e->getCode(), [], $e);
+        } catch (ServerException $e) {
+            $this->logger->error("API Server Exception: " . $e->getMessage());
+            throw new DvbApiException("API server error: " . $e->getMessage(), $e->getCode(), [], $e);
         } catch (GuzzleException $e) {
             $this->logger->error("API request failed: " . $e->getMessage());
             throw new DvbApiException("API request failed: " . $e->getMessage(), $e->getCode(), [], $e);
@@ -273,6 +314,64 @@ class DvbApiClient
     }
 
     /**
+     * Create a new user.
+     *
+     * @param string $email
+     * @param string|null $name
+     * @param string|null $phone
+     * @return UserResponseDTO
+     * @throws DvbApiException
+     */
+    public function createUser(string $email, ?string $name = null, ?string $phone = null): UserResponseDTO
+    {
+        $query = ['email' => $email];
+        if ($name !== null) {
+            $query['name'] = $name;
+        }
+        if ($phone !== null) {
+            $query['phone'] = $phone;
+        }
+        $response = $this->post('user', [], $query);
+        return UserResponseDTO::fromArray($response);
+    }
+
+    /**
+     * Get a user by their identifier (UID, email, phone, or wallet address).
+     *
+     * @param string $identifier
+     * @return UserResponseDTO
+     * @throws DvbApiException
+     */
+    public function getUser(string $identifier): UserResponseDTO
+    {
+        $response = $this->get("user/{$identifier}");
+        return UserResponseDTO::fromArray($response);
+    }
+
+    /**
+     * Get NFTs owned by a user.
+     *
+     * @param string $uid
+     * @param int $chainId
+     * @param string|null $collectionAddress
+     * @param string|null $cursor
+     * @return UserNftResponseDTO
+     * @throws DvbApiException
+     */
+    public function getNftsByUser(string $uid, int $chainId, ?string $collectionAddress = null, ?string $cursor = null): UserNftResponseDTO
+    {
+        $query = ['chain_id' => $chainId];
+        if ($collectionAddress !== null) {
+            $query['collection_address'] = $collectionAddress;
+        }
+        if ($cursor !== null) {
+            $query['cursor'] = $cursor;
+        }
+        $response = $this->get("user/{$uid}/nft", $query);
+        return UserNftResponseDTO::fromArray($response);
+    }
+
+    /**
      * Get user profile.
      *
      * @return \DVB\Core\SDK\DTOs\UserResponseDTO
@@ -316,14 +415,14 @@ class DvbApiClient
     /**
      * Check if user has specific permissions.
      *
-     * @param array $permissions
+     * @param array|string $permission
      * @return \DVB\Core\SDK\DTOs\CheckPermissionResponseDTO
      * @throws \DVB\Core\SDK\Exceptions\DvbApiException
      */
-    public function checkPermission(array $permissions): CheckPermissionResponseDTO
+    public function checkPermission(array|string $permission): CheckPermissionResponseDTO
     {
         $response = $this->post('permission/check', [
-            'permissions' => $permissions,
+            'permission' => $permission,
         ]);
         return CheckPermissionResponseDTO::fromArray($response);
     }
@@ -618,16 +717,24 @@ class DvbApiClient
     /**
      * Upload file to IPFS.
      *
-     * @param mixed $fileResource
+     * @param resource $fileResource
      * @param bool $toCdn
-     * @return \DVB\Core\SDK\DTOs\IpfsUploadResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
+     * @return IpfsUploadResponseDTO
+     * @throws DvbApiException
      */
     public function uploadFileToIpfs($fileResource, bool $toCdn = true): IpfsUploadResponseDTO
     {
-        $response = $this->post('ipfs/upload-file', [
-            'file' => $fileResource,
-            'toCdn' => $toCdn,
+        $response = $this->request('POST', 'ipfs/upload-file', [
+            'multipart' => [
+                [
+                    'name'     => 'file',
+                    'contents' => $fileResource,
+                ],
+                [
+                    'name'     => 'to_cdn',
+                    'contents' => $toCdn ? 'true' : 'false',
+                ],
+            ],
         ]);
         return IpfsUploadResponseDTO::fromArray($response);
     }
@@ -635,16 +742,28 @@ class DvbApiClient
     /**
      * Upload folder to IPFS.
      *
-     * @param array $files
+     * @param array $files An array of file resources.
      * @param bool $toCdn
-     * @return \DVB\Core\SDK\DTOs\IpfsFolderUploadResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
+     * @return IpfsFolderUploadResponseDTO
+     * @throws DvbApiException
      */
     public function uploadFolderToIpfs(array $files, bool $toCdn = true): IpfsFolderUploadResponseDTO
     {
-        $response = $this->post('ipfs/upload-files-to-folder', [
-            'files' => $files,
-            'toCdn' => $toCdn,
+        $multipart = [];
+        foreach ($files as $file) {
+            $multipart[] = [
+                'name'     => 'files[]',
+                'contents' => $file,
+            ];
+        }
+
+        $multipart[] = [
+            'name'     => 'to_cdn',
+            'contents' => $toCdn ? 'true' : 'false',
+        ];
+
+        $response = $this->request('POST', 'ipfs/upload-files-to-folder', [
+            'multipart' => $multipart,
         ]);
         return IpfsFolderUploadResponseDTO::fromArray($response);
     }
@@ -654,14 +773,14 @@ class DvbApiClient
      *
      * @param array $jsonData
      * @param bool $toCdn
-     * @return \DVB\Core\SDK\DTOs\IpfsUploadResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
+     * @return IpfsUploadResponseDTO
+     * @throws DvbApiException
      */
     public function uploadJsonToIpfs(array $jsonData, bool $toCdn = true): IpfsUploadResponseDTO
     {
         $response = $this->post('ipfs/upload-json', [
-            'jsonData' => $jsonData,
-            'toCdn' => $toCdn,
+            'json'   => $jsonData,
+            'to_cdn' => $toCdn,
         ]);
         return IpfsUploadResponseDTO::fromArray($response);
     }
@@ -669,8 +788,8 @@ class DvbApiClient
     /**
      * Get IPFS stats.
      *
-     * @return \DVB\Core\SDK\DTOs\IpfsStatsResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
+     * @return IpfsStatsResponseDTO
+     * @throws DvbApiException
      */
     public function getIpfsStats(): IpfsStatsResponseDTO
     {

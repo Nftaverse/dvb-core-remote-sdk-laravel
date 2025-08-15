@@ -4,11 +4,15 @@ namespace DVB\Core\SDK\DTOs;
 
 class ApiResponse
 {
-    public function __construct(
-        public readonly int $code,
-        public readonly string $message,
-        public readonly ?array $data = null,
-    ) {
+    public int $code;
+    public string $message;
+    public mixed $data = null;
+
+    public function __construct(int $code, string $message, mixed $data = null)
+    {
+        $this->code = $code;
+        $this->message = $message;
+        $this->data = $data;
     }
 
     public static function fromArray(array $data): self

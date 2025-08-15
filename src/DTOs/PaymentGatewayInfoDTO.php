@@ -4,27 +4,20 @@ namespace DVB\Core\SDK\DTOs;
 
 class PaymentGatewayInfoDTO
 {
-    public function __construct(
-        public readonly string $id,
-        public readonly string $name,
-        public readonly string $type,
-        public readonly bool $enabled,
-        public readonly ?string $description = null,
-        public readonly ?array $supportedCurrencies = null,
-        public readonly ?string $createdAt = null,
-    ) {
+    public string $gatewayId;
+    public string $name;
+
+    public function __construct(string $gatewayId, string $name)
+    {
+        $this->gatewayId = $gatewayId;
+        $this->name = $name;
     }
 
     public static function fromArray(array $data): self
     {
         return new self(
-            $data['id'] ?? '',
+            $data['gatewayId'] ?? '',
             $data['name'] ?? '',
-            $data['type'] ?? '',
-            $data['enabled'] ?? false,
-            $data['description'] ?? null,
-            $data['supportedCurrencies'] ?? null,
-            $data['createdAt'] ?? null,
         );
     }
 }

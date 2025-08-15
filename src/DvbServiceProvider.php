@@ -2,43 +2,32 @@
 
 namespace DVB\Core\SDK;
 
+use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
+use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 
-class DvbServiceProvider extends ServiceProvider
+class DvbServiceProvider extends ServiceProvider implements DeferrableProvider
 {
-    /**
-     * Register services.
-     *
-     * @return void
-     */
-    public function register()
+    public function register(): void
     {
-        $this->mergeConfigFrom(
-            __DIR__.'/../config/dvb.php', 'dvb'
-        );
-
         $this->app->singleton(DvbApiClient::class, function ($app) {
+            $config = $app['config']['services.dvb'];
+
             return new DvbApiClient(
-                null,
+                $app->make(ClientInterface::class),
                 $app['log'],
-                config('dvb.key', config('services.dvb.key', '')),
-                config('dvb.domain', config('services.dvb.domain', 'api.dvb.com')),
-                config('dvb.protocol', config('services.dvb.protocol', 'https'))
+                $config['api_key'] ?? '',
+                $config['domain'] ?? 'dev-epoch.nft-investment.io',
+                $config['protocol'] ?? 'https'
             );
         });
 
-        $this->app->alias(DvbApiClient::class, 'dvb-api-client');
+        $this->app->bind(ClientInterface::class, Client::class);
     }
 
-    /**
-     * Bootstrap services.
-     *
-     * @return void
-     */
-    public function boot()
+    public function provides(): array
     {
-        $this->publishes([
-            __DIR__.'/../config/dvb.php' => config_path('dvb.php'),
-        ], 'config');
+        return [DvbApiClient::class, ClientInterface::class];
     }
 }

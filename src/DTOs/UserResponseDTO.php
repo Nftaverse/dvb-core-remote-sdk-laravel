@@ -2,21 +2,24 @@
 
 namespace DVB\Core\SDK\DTOs;
 
-class UserResponseDTO
+class UserResponseDTO extends ApiResponse
 {
-    public function __construct(
-        public readonly int $code,
-        public readonly string $message,
-        public readonly ?UserDTO $data,
-    ) {
+    /** @var UserDTO|null */
+    public mixed $data;
+
+    public function __construct(int $code, string $message, ?UserDTO $data = null)
+    {
+        parent::__construct($code, $message);
+        $this->data = $data;
     }
 
     public static function fromArray(array $data): self
     {
+        $userDto = isset($data['data']) ? UserDTO::fromArray($data['data']) : null;
         return new self(
             $data['code'] ?? 0,
             $data['message'] ?? '',
-            isset($data['data']) ? UserDTO::fromArray($data['data']) : null,
+            $userDto
         );
     }
 }

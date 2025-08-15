@@ -2,34 +2,42 @@
 
 namespace DVB\Core\SDK\DTOs;
 
-class WebhookListResponseDTO
+use DVB\Core\SDK\DTOs\PaginatedWebhookDataDTO;
+
+class WebhookListResponseDTO extends ApiResponse implements PaginatedResponseInterface
 {
-    /**
-     * @param int $code
-     * @param string $message
-     * @param WebhookDTO[]|null $data
-     */
-    public function __construct(
-        public readonly int $code,
-        public readonly string $message,
-        public readonly ?array $data,
-    ) {
+    /** @var PaginatedWebhookDataDTO|null */
+    public mixed $data;
+
+    public function __construct(int $code, string $message, ?PaginatedWebhookDataDTO $data = null)
+    {
+        parent::__construct($code, $message);
+        $this->data = $data;
     }
 
     public static function fromArray(array $data): self
     {
-        $webhooks = null;
-        if (isset($data['data']) && is_array($data['data'])) {
-            $webhooks = [];
-            foreach ($data['data'] as $webhookData) {
-                $webhooks[] = WebhookDTO::fromArray($webhookData);
-            }
-        }
+        $paginatedData = isset($data['data']) ? PaginatedWebhookDataDTO::fromArray($data['data']) : null;
 
         return new self(
             $data['code'] ?? 0,
             $data['message'] ?? '',
-            $webhooks,
+            $paginatedData
         );
+    }
+
+    public function getCursor(): ?string
+    {
+        return $this->data?->cursor;
+    }
+
+    public function hasMore(): bool
+    {
+        return $this->data?->hasMore ?? false;
+    }
+
+    public function getItems(): ?array
+    {
+        return $this->data?->items;
     }
 }

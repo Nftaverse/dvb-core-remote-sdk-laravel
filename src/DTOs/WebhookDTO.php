@@ -4,16 +4,33 @@ namespace DVB\Core\SDK\DTOs;
 
 class WebhookDTO
 {
+    public string $id;
+    public string $url;
+    public string $type;
+    public ?string $name;
+    public ?string $collectionAddress;
+    public ?string $collectionChainId;
+    public ?string $createdAt;
+    public ?string $updatedAt;
+
     public function __construct(
-        public readonly string $id,
-        public readonly string $url,
-        public readonly string $type,
-        public readonly ?string $name = null,
-        public readonly ?string $collectionAddress = null,
-        public readonly ?string $collectionChainId = null,
-        public readonly ?string $createdAt = null,
-        public readonly ?string $updatedAt = null,
+        string $id,
+        string $url,
+        string $type,
+        ?string $name = null,
+        ?string $collectionAddress = null,
+        ?string $collectionChainId = null,
+        ?string $createdAt = null,
+        ?string $updatedAt = null
     ) {
+        $this->id = $id;
+        $this->url = $url;
+        $this->type = $type;
+        $this->name = $name;
+        $this->collectionAddress = $collectionAddress;
+        $this->collectionChainId = $collectionChainId;
+        $this->createdAt = $createdAt;
+        $this->updatedAt = $updatedAt;
     }
 
     public static function fromArray(array $data): self

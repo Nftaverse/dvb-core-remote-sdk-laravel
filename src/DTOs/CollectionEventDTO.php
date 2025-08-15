@@ -4,18 +4,39 @@ namespace DVB\Core\SDK\DTOs;
 
 class CollectionEventDTO
 {
+    public string $id;
+    public string $collectionAddress;
+    public int $chainId;
+    public string $eventType;
+    public ?string $tokenId;
+    public ?string $fromAddress;
+    public ?string $toAddress;
+    public ?string $transactionHash;
+    public ?string $blockNumber;
+    public ?string $timestamp;
+
     public function __construct(
-        public readonly string $id,
-        public readonly string $collectionAddress,
-        public readonly int $chainId,
-        public readonly string $eventType,
-        public readonly ?string $tokenId = null,
-        public readonly ?string $fromAddress = null,
-        public readonly ?string $toAddress = null,
-        public readonly ?string $transactionHash = null,
-        public readonly ?string $blockNumber = null,
-        public readonly ?string $timestamp = null,
+        string $id,
+        string $collectionAddress,
+        int $chainId,
+        string $eventType,
+        ?string $tokenId = null,
+        ?string $fromAddress = null,
+        ?string $toAddress = null,
+        ?string $transactionHash = null,
+        ?string $blockNumber = null,
+        ?string $timestamp = null
     ) {
+        $this->id = $id;
+        $this->collectionAddress = $collectionAddress;
+        $this->chainId = $chainId;
+        $this->eventType = $eventType;
+        $this->tokenId = $tokenId;
+        $this->fromAddress = $fromAddress;
+        $this->toAddress = $toAddress;
+        $this->transactionHash = $transactionHash;
+        $this->blockNumber = $blockNumber;
+        $this->timestamp = $timestamp;
     }
 
     public static function fromArray(array $data): self

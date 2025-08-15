@@ -2,34 +2,25 @@
 
 namespace DVB\Core\SDK\DTOs;
 
-class IpfsFolderUploadResponseDTO
+class IpfsFolderUploadResponseDTO extends ApiResponse
 {
-    /**
-     * @param int $code
-     * @param string $message
-     * @param IpfsFileDataDTO[]|null $data
-     */
-    public function __construct(
-        public readonly int $code,
-        public readonly string $message,
-        public readonly ?array $data,
-    ) {
+    /** @var IpfsFolderDTO|null */
+    public mixed $data;
+
+    public function __construct(int $code, string $message, ?IpfsFolderDTO $data = null)
+    {
+        parent::__construct($code, $message);
+        $this->data = $data;
     }
 
     public static function fromArray(array $data): self
     {
-        $files = null;
-        if (isset($data['data']) && is_array($data['data'])) {
-            $files = [];
-            foreach ($data['data'] as $fileData) {
-                $files[] = IpfsFileDataDTO::fromArray($fileData);
-            }
-        }
+        $folder = isset($data['data']) ? IpfsFolderDTO::fromArray($data['data']) : null;
 
         return new self(
             $data['code'] ?? 0,
             $data['message'] ?? '',
-            $files,
+            $folder
         );
     }
 }

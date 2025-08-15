@@ -4,23 +4,20 @@ namespace DVB\Core\SDK\DTOs;
 
 class IpfsStatsDTO
 {
-    public function __construct(
-        public readonly int $totalUploads,
-        public readonly int $totalSize,
-        public readonly int $monthlyUploads,
-        public readonly int $monthlySize,
-        public readonly ?string $lastUpload = null,
-    ) {
+    public int $totalUploads;
+    public int $totalSize;
+
+    public function __construct(int $totalUploads, int $totalSize)
+    {
+        $this->totalUploads = $totalUploads;
+        $this->totalSize = $totalSize;
     }
 
     public static function fromArray(array $data): self
     {
         return new self(
             $data['totalUploads'] ?? 0,
-            $data['totalSize'] ?? 0,
-            $data['monthlyUploads'] ?? 0,
-            $data['monthlySize'] ?? 0,
-            $data['lastUpload'] ?? null,
+            $data['totalSize'] ?? 0
         );
     }
 }

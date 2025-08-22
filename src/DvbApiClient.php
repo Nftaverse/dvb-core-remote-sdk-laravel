@@ -24,6 +24,7 @@ use DVB\Core\SDK\DTOs\NftMetadataResponseDTO;
 use DVB\Core\SDK\DTOs\NftJobDetailsResponseDTO;
 use DVB\Core\SDK\DTOs\WebhookListResponseDTO;
 use DVB\Core\SDK\DTOs\WebhookDetailsResponseDTO;
+use DVB\Core\SDK\Enums\WebhookType;
 use DVB\Core\SDK\DTOs\CreatePaymentResponseDTO;
 use DVB\Core\SDK\DTOs\PaymentDetailsResponseDTO;
 use DVB\Core\SDK\DTOs\PaymentGatewayResponseDTO;
@@ -564,6 +565,30 @@ class DvbApiClient
     }
 
     /**
+     * Get owned collections list.
+     *
+     * @param int|null $chainId
+     * @param string|null $cursor
+     * @return \DVB\Core\SDK\DTOs\CollectionListResponseDTO
+     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
+     */
+    public function getOwnCollections(?int $chainId = null, ?string $cursor = null): CollectionListResponseDTO
+    {
+        $query = [];
+        
+        if ($chainId !== null) {
+            $query['chain_id'] = $chainId;
+        }
+        
+        if ($cursor) {
+            $query['cursor'] = $cursor;
+        }
+
+        $response = $this->get('collection/own', $query);
+        return CollectionListResponseDTO::fromArray($response);
+    }
+
+    /**
      * Get collection events.
      *
      * @param string $address
@@ -680,18 +705,18 @@ class DvbApiClient
      * Create webhook.
      *
      * @param string $url
-     * @param string $type
+     * @param \DVB\Core\SDK\Enums\WebhookType $type
      * @param string|null $name
      * @param string|null $collectionAddress
      * @param string|null $collectionChainId
      * @return \DVB\Core\SDK\DTOs\WebhookListResponseDTO
      * @throws \DVB\Core\SDK\Exceptions\DvbApiException
      */
-    public function createWebhook(string $url, string $type, ?string $name = null, ?string $collectionAddress = null, ?string $collectionChainId = null): WebhookListResponseDTO
+    public function createWebhook(string $url, WebhookType $type, ?string $name = null, ?string $collectionAddress = null, ?string $collectionChainId = null): WebhookListResponseDTO
     {
         $data = [
             'url' => $url,
-            'type' => $type,
+            'type' => $type->value,
         ];
 
         if ($name) {
@@ -704,6 +729,11 @@ class DvbApiClient
 
         if ($collectionChainId) {
             $data['collectionChainId'] = $collectionChainId;
+        }
+        
+        // Validate that collection address and chain ID are provided for types that require them
+        if (in_array($type, [WebhookType::mint_nft, WebhookType::transfer_nft], true) && (empty($collectionAddress) || empty($collectionChainId))) {
+            throw new \InvalidArgumentException('Collection address and chain ID are required for this webhook type.');
         }
 
         $response = $this->post('webhook', $data);

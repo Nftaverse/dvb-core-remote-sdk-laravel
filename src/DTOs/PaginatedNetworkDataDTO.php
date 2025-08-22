@@ -24,10 +24,21 @@ class PaginatedNetworkDataDTO implements PaginatedResponseInterface
     public static function fromArray(array $data): self
     {
         $items = null;
+        // Check if data is structured with 'items' key or directly as an array of networks
         if (isset($data['items']) && is_array($data['items'])) {
+            // Standard pagination structure
             $items = [];
             foreach ($data['items'] as $itemData) {
                 $items[] = NetworkDTO::fromArray($itemData);
+            }
+        } elseif (is_array($data) && !empty($data)) {
+            // Direct array of networks (non-pagination structure)
+            $items = [];
+            foreach ($data as $itemData) {
+                // Skip non-array items
+                if (is_array($itemData)) {
+                    $items[] = NetworkDTO::fromArray($itemData);
+                }
             }
         }
 

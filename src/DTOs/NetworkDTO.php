@@ -30,12 +30,12 @@ class NetworkDTO
     public static function fromArray(array $data): self
     {
         return new self(
-            $data['chainId'] ?? 0,
+            $data['chainId'] ?? $data['chain_id'] ?? 0,
             $data['name'] ?? '',
             $data['symbol'] ?? null,
             isset($data['decimals']) ? (int)$data['decimals'] : null,
-            $data['rpcUrl'] ?? null,
-            $data['explorerUrl'] ?? null,
+            $data['rpcUrl'] ?? $data['rpc_url'] ?? null,
+            $data['explorerUrl'] ?? $data['explorer_url'] ?? null,
         );
     }
 }

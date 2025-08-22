@@ -21,7 +21,6 @@ class NftDtoTest extends TestCase
             'image' => 'https://example.com/image.png',
             'contractAddress' => '0x123',
             'chainId' => 1,
-            'owner' => '0x456',
             'attributes' => [
                 [
                     'trait_type' => 'Color',
@@ -43,11 +42,10 @@ class NftDtoTest extends TestCase
         $this->assertEquals('https://example.com/image.png', $nft->image);
         $this->assertEquals('0x123', $nft->contractAddress);
         $this->assertEquals(1, $nft->chainId);
-        $this->assertEquals('0x456', $nft->owner);
         $this->assertIsArray($nft->attributes);
         $this->assertCount(2, $nft->attributes);
         $this->assertInstanceOf(NftAttributeDTO::class, $nft->attributes[0]);
-        $this->assertEquals('Color', $nft->attributes[0]->trait_type);
+        $this->assertEquals('Color', $nft->attributes[0]->traitType);
         $this->assertEquals('Blue', $nft->attributes[0]->value);
     }
 
@@ -69,7 +67,6 @@ class NftDtoTest extends TestCase
         $this->assertNull($nft->image);
         $this->assertEquals('0x123', $nft->contractAddress);
         $this->assertEquals(1, $nft->chainId);
-        $this->assertNull($nft->owner);
         $this->assertNull($nft->attributes);
     }
 
@@ -82,7 +79,6 @@ class NftDtoTest extends TestCase
             'image' => null,
             'contractAddress' => '0x123',
             'chainId' => 1,
-            'owner' => null,
             'attributes' => null,
         ];
 
@@ -95,7 +91,6 @@ class NftDtoTest extends TestCase
         $this->assertNull($nft->image);
         $this->assertEquals('0x123', $nft->contractAddress);
         $this->assertEquals(1, $nft->chainId);
-        $this->assertNull($nft->owner);
         $this->assertNull($nft->attributes);
     }
 
@@ -110,9 +105,9 @@ class NftDtoTest extends TestCase
         $attribute = NftAttributeDTO::fromArray($data);
 
         $this->assertInstanceOf(NftAttributeDTO::class, $attribute);
-        $this->assertEquals('Color', $attribute->trait_type);
+        $this->assertEquals('Color', $attribute->traitType);
         $this->assertEquals('Blue', $attribute->value);
-        $this->assertEquals('string', $attribute->display_type);
+        $this->assertEquals('string', $attribute->displayType);
     }
 
     public function test_nft_attribute_dto_can_be_created_with_missing_fields()
@@ -125,9 +120,9 @@ class NftDtoTest extends TestCase
         $attribute = NftAttributeDTO::fromArray($data);
 
         $this->assertInstanceOf(NftAttributeDTO::class, $attribute);
-        $this->assertEquals('Color', $attribute->trait_type);
+        $this->assertEquals('Color', $attribute->traitType);
         $this->assertEquals('Blue', $attribute->value);
-        $this->assertNull($attribute->display_type);
+        $this->assertNull($attribute->displayType);
     }
 
     public function test_nft_metadata_dto_can_be_created_from_array()

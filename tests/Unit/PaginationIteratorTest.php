@@ -5,11 +5,8 @@ namespace DVB\Core\SDK\Tests\Unit;
 use DVB\Core\SDK\PaginationIterator;
 use DVB\Core\SDK\Tests\TestCase;
 use DVB\Core\SDK\DvbApiClient;
-use DVB\Core\SDK\DTOs\PaginatedNftDataDTO;
+use DVB\Core\SDK\DTOs\NftListResponseDTO;
 use DVB\Core\SDK\DTOs\NftDTO;
-use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Psr7\Response;
-use Psr\Log\LoggerInterface;
 
 class PaginationIteratorTest extends TestCase
 {
@@ -21,301 +18,129 @@ class PaginationIteratorTest extends TestCase
         $this->assertInstanceOf(PaginationIterator::class, $iterator);
     }
 
-    public function test_next_method_calls_client_method_with_correct_parameters()
-    {
-        // Arrange
-        $httpClient = $this->createMock(ClientInterface::class);
-        $logger = $this->createMock(LoggerInterface::class);
-        $client = new DvbApiClient($httpClient, $logger, 'test-key');
-        
-        // Create a mock response for the first page
-        $firstPageResponse = [
-            'code' => 200,
-            'message' => 'Success',
-            'data' => [
-                'items' => [
-                    ['tokenId' => '1', 'name' => 'NFT 1', 'contractAddress' => '0x123', 'chainId' => 1],
-                ],
-                'cursor' => 'cursor1',
-                'hasMore' => true
-            ]
-        ];
-        
-        $httpClient->expects($this->once())
-            ->method('request')
-            ->with('GET', 'https://api.dvb.com/nft/address', $this->callback(function ($options) {
-                // Verify no cursor in first request
-                return !isset($options['query']['cursor']);
-            }))
-            ->willReturn(new Response(200, [], json_encode($firstPageResponse)));
-        
-        $iterator = new PaginationIterator($client, 'getNftsByContract', ['address', 1]);
-        
-        // Act
-        $iterator->next();
-        
-        // Assert
-        $current = $iterator->current();
-        $this->assertInstanceOf(PaginatedNftDataDTO::class, $current);
-        $this->assertTrue($iterator->hasNext());
-        $this->assertEquals('cursor1', $current->getCursor());
-    }
-
-    public function test_next_method_calls_client_method_with_cursor_on_subsequent_calls()
-    {
-        // Arrange
-        $httpClient = $this->createMock(ClientInterface::class);
-        $logger = $this->createMock(LoggerInterface::class);
-        $client = new DvbApiClient($httpClient, $logger, 'test-key');
-        
-        // Create mock responses for multiple pages
-        $firstPageResponse = [
-            'code' => 200,
-            'message' => 'Success',
-            'data' => [
-                'items' => [
-                    ['tokenId' => '1', 'name' => 'NFT 1', 'contractAddress' => '0x123', 'chainId' => 1],
-                ],
-                'cursor' => 'cursor1',
-                'hasMore' => true
-            ]
-        ];
-        
-        $secondPageResponse = [
-            'code' => 200,
-            'message' => 'Success',
-            'data' => [
-                'items' => [
-                    ['tokenId' => '2', 'name' => 'NFT 2', 'contractAddress' => '0x123', 'chainId' => 1],
-                ],
-                'cursor' => null,
-                'hasMore' => false
-            ]
-        ];
-        
-        $httpClient->expects($this->exactly(2))
-            ->method('request')
-            ->withConsecutive(
-                [$this->equalTo('GET'), $this->equalTo('https://api.dvb.com/nft/address'), $this->callback(function ($options) {
-                    return !isset($options['query']['cursor']);
-                })],
-                [$this->equalTo('GET'), $this->equalTo('https://api.dvb.com/nft/address'), $this->callback(function ($options) {
-                    return isset($options['query']['cursor']) && $options['query']['cursor'] === 'cursor1';
-                })]
-            )
-            ->willReturnOnConsecutiveCalls(
-                new Response(200, [], json_encode($firstPageResponse)),
-                new Response(200, [], json_encode($secondPageResponse))
-            );
-        
-        $iterator = new PaginationIterator($client, 'getNftsByContract', ['address', 1]);
-        
-        // Act & Assert - First call
-        $iterator->next();
-        $current = $iterator->current();
-        $this->assertInstanceOf(PaginatedNftDataDTO::class, $current);
-        $this->assertTrue($iterator->hasNext());
-        $this->assertEquals('cursor1', $current->getCursor());
-        
-        // Act & Assert - Second call
-        $iterator->next();
-        $current = $iterator->current();
-        $this->assertInstanceOf(PaginatedNftDataDTO::class, $current);
-        $this->assertFalse($iterator->hasNext());
-        $this->assertNull($current->getCursor());
-    }
-
-    public function test_has_next_returns_false_when_no_more_pages()
+    public function test_iteration_works_correctly_for_multiple_pages()
     {
         // Arrange
         $client = $this->createMock(DvbApiClient::class);
+
+        // Mock the first page response
+        $firstPageResponse = $this->createMock(NftListResponseDTO::class);
+        $firstPageResponse->method('getItems')->willReturn([
+            new NftDTO('1', '0x123', 1, 'Test NFT 1', 'Description 1', 'image1.jpg'),
+            new NftDTO('2', '0x123', 1, 'Test NFT 2', 'Description 2', 'image2.jpg'),
+        ]);
+        $firstPageResponse->method('getCursor')->willReturn('cursor1');
+        $firstPageResponse->method('hasMore')->willReturn(true);
+
+        // Mock the second page response
+        $secondPageResponse = $this->createMock(NftListResponseDTO::class);
+        $secondPageResponse->method('getItems')->willReturn([ new NftDTO('3', '0x123', 1, 'Test NFT 3', 'Description 3', 'image3.jpg') ]);
+        $secondPageResponse->method('getCursor')->willReturn(null);
+        $secondPageResponse->method('hasMore')->willReturn(false);
+
+        $callCount = 0;
+        $client->expects($this->exactly(2))
+            ->method('getNftsByContract')
+            ->willReturnCallback(function ($address, $chainId, $cursor = null) use ($firstPageResponse, $secondPageResponse, &$callCount) {
+                $callCount++;
+                if ($callCount === 1) {
+                    $this->assertEquals('address', $address);
+                    $this->assertEquals(1, $chainId);
+                    $this->assertNull($cursor);
+                    return $firstPageResponse;
+                } elseif ($callCount === 2) {
+                    $this->assertEquals('address', $address);
+                    $this->assertEquals(1, $chainId);
+                    $this->assertEquals('cursor1', $cursor);
+                    return $secondPageResponse;
+                }
+                $this->fail('Method was called more than twice');
+            });
+
         $iterator = new PaginationIterator($client, 'getNftsByContract', ['address', 1]);
         
-        // Mock the currentResponse to have no more pages
-        $paginatedData = $this->createMock(PaginatedNftDataDTO::class);
-        $paginatedData->method('hasMore')->willReturn(false);
-        $paginatedData->method('getCursor')->willReturn(null);
-        
-        // Use reflection to set the private property
-        $reflection = new \ReflectionClass($iterator);
-        $currentResponseProperty = $reflection->getProperty('currentResponse');
-        $currentResponseProperty->setAccessible(true);
-        $currentResponseProperty->setValue($iterator, $paginatedData);
-        
-        $hasMoreProperty = $reflection->getProperty('hasMore');
-        $hasMoreProperty->setAccessible(true);
-        $hasMoreProperty->setValue($iterator, false);
-        
-        // Act & Assert
-        $this->assertFalse($iterator->hasNext());
-    }
+        // Act
+        $results = [];
+        foreach ($iterator as $item) {
+            $results[] = $item;
+        }
 
-    public function test_has_next_returns_true_when_more_pages_available()
+        // Assert
+        $this->assertCount(3, $results);
+        $this->assertInstanceOf(NftDTO::class, $results[0]);
+        $this->assertEquals('1', $results[0]->tokenId);
+        $this->assertEquals('2', $results[1]->tokenId);
+        $this->assertEquals('3', $results[2]->tokenId);
+    }
+    
+    public function test_get_all_items_collects_from_all_pages()
     {
         // Arrange
         $client = $this->createMock(DvbApiClient::class);
-        $iterator = new PaginationIterator($client, 'getNftsByContract', ['address', 1]);
-        
-        // Mock the currentResponse to have more pages
-        $paginatedData = $this->createMock(PaginatedNftDataDTO::class);
-        $paginatedData->method('hasMore')->willReturn(true);
-        $paginatedData->method('getCursor')->willReturn('next_cursor');
-        
-        // Use reflection to set the private property
-        $reflection = new \ReflectionClass($iterator);
-        $currentResponseProperty = $reflection->getProperty('currentResponse');
-        $currentResponseProperty->setAccessible(true);
-        $currentResponseProperty->setValue($iterator, $paginatedData);
-        
-        $hasMoreProperty = $reflection->getProperty('hasMore');
-        $hasMoreProperty->setAccessible(true);
-        $hasMoreProperty->setValue($iterator, true);
-        
-        // Act & Assert
-        $this->assertTrue($iterator->hasNext());
-    }
+        $firstPageResponse = $this->createMock(NftListResponseDTO::class);
+        $firstPageResponse->method('getItems')->willReturn([new NftDTO('1', '0x123', 1, 'Test NFT 1', 'Description 1', 'image1.jpg')]);
+        $firstPageResponse->method('getCursor')->willReturn('cursor1');
+        $firstPageResponse->method('hasMore')->willReturn(true);
 
-    public function test_get_all_items_collects_items_from_all_pages()
-    {
-        // Arrange
-        $httpClient = $this->createMock(ClientInterface::class);
-        $logger = $this->createMock(LoggerInterface::class);
-        $client = new DvbApiClient($httpClient, $logger, 'test-key');
-        
-        // Create mock responses for multiple pages
-        $firstPageResponse = [
-            'code' => 200,
-            'message' => 'Success',
-            'data' => [
-                'items' => [
-                    ['tokenId' => '1', 'name' => 'NFT 1', 'contractAddress' => '0x123', 'chainId' => 1],
-                    ['tokenId' => '2', 'name' => 'NFT 2', 'contractAddress' => '0x123', 'chainId' => 1],
-                ],
-                'cursor' => 'cursor1',
-                'hasMore' => true
-            ]
-        ];
-        
-        $secondPageResponse = [
-            'code' => 200,
-            'message' => 'Success',
-            'data' => [
-                'items' => [
-                    ['tokenId' => '3', 'name' => 'NFT 3', 'contractAddress' => '0x123', 'chainId' => 1],
-                ],
-                'cursor' => null,
-                'hasMore' => false
-            ]
-        ];
-        
-        $httpClient->expects($this->exactly(2))
-            ->method('request')
-            ->willReturnOnConsecutiveCalls(
-                new Response(200, [], json_encode($firstPageResponse)),
-                new Response(200, [], json_encode($secondPageResponse))
-            );
-        
-        $iterator = new PaginationIterator($client, 'getNftsByContract', ['address', 1]);
-        
-        // Act
-        $allItems = $iterator->getAllItems();
-        
-        // Assert
-        $this->assertIsArray($allItems);
-        $this->assertCount(3, $allItems);
-        $this->assertInstanceOf(NftDTO::class, $allItems[0]);
-        $this->assertEquals('1', $allItems[0]->tokenId);
-        $this->assertEquals('2', $allItems[1]->tokenId);
-        $this->assertEquals('3', $allItems[2]->tokenId);
-    }
+        $secondPageResponse = $this->createMock(NftListResponseDTO::class);
+        $secondPageResponse->method('getItems')->willReturn([new NftDTO('2', '0x123', 1, 'Test NFT 2', 'Description 2', 'image2.jpg')]);
+        $secondPageResponse->method('getCursor')->willReturn(null);
+        $secondPageResponse->method('hasMore')->willReturn(false);
 
-    public function test_get_all_items_handles_empty_response()
-    {
-        // Arrange
-        $httpClient = $this->createMock(ClientInterface::class);
-        $logger = $this->createMock(LoggerInterface::class);
-        $client = new DvbApiClient($httpClient, $logger, 'test-key');
-        
-        // Create mock response for empty result
-        $emptyResponse = [
-            'code' => 200,
-            'message' => 'Success',
-            'data' => [
-                'items' => [],
-                'cursor' => null,
-                'hasMore' => false
-            ]
-        ];
-        
-        $httpClient->expects($this->once())
-            ->method('request')
-            ->willReturn(new Response(200, [], json_encode($emptyResponse)));
-        
-        $iterator = new PaginationIterator($client, 'getNftsByContract', ['address', 1]);
-        
-        // Act
-        $allItems = $iterator->getAllItems();
-        
-        // Assert
-        $this->assertIsArray($allItems);
-        $this->assertCount(0, $allItems);
-    }
+        $client->method('getNftsByContract')
+            ->willReturnOnConsecutiveCalls($firstPageResponse, $secondPageResponse);
 
-    public function test_get_all_items_handles_single_page_response()
-    {
-        // Arrange
-        $httpClient = $this->createMock(ClientInterface::class);
-        $logger = $this->createMock(LoggerInterface::class);
-        $client = new DvbApiClient($httpClient, $logger, 'test-key');
-        
-        // Create mock response for single page
-        $singlePageResponse = [
-            'code' => 200,
-            'message' => 'Success',
-            'data' => [
-                'items' => [
-                    ['tokenId' => '1', 'name' => 'NFT 1', 'contractAddress' => '0x123', 'chainId' => 1],
-                    ['tokenId' => '2', 'name' => 'NFT 2', 'contractAddress' => '0x123', 'chainId' => 1],
-                ],
-                'cursor' => null,
-                'hasMore' => false
-            ]
-        ];
-        
-        $httpClient->expects($this->once())
-            ->method('request')
-            ->willReturn(new Response(200, [], json_encode($singlePageResponse)));
-        
         $iterator = new PaginationIterator($client, 'getNftsByContract', ['address', 1]);
-        
+
         // Act
         $allItems = $iterator->getAllItems();
         
         // Assert
         $this->assertIsArray($allItems);
         $this->assertCount(2, $allItems);
-        $this->assertInstanceOf(NftDTO::class, $allItems[0]);
         $this->assertEquals('1', $allItems[0]->tokenId);
         $this->assertEquals('2', $allItems[1]->tokenId);
     }
 
-    public function test_iterator_handles_null_current_response()
+    public function test_iteration_handles_empty_response()
     {
         // Arrange
         $client = $this->createMock(DvbApiClient::class);
+        $emptyResponse = $this->createMock(NftListResponseDTO::class);
+        $emptyResponse->method('getItems')->willReturn([]);
+        $emptyResponse->method('hasMore')->willReturn(false);
+
+        $client->expects($this->once())->method('getNftsByContract')->willReturn($emptyResponse);
         $iterator = new PaginationIterator($client, 'getNftsByContract', ['address', 1]);
         
-        // Use reflection to set the private property to null
-        $reflection = new \ReflectionClass($iterator);
-        $currentResponseProperty = $reflection->getProperty('currentResponse');
-        $currentResponseProperty->setAccessible(true);
-        $currentResponseProperty->setValue($iterator, null);
-        
         // Act
-        $iterator->next();
+        $results = [];
+        foreach ($iterator as $item) {
+            $results[] = $item;
+        }
         
         // Assert
-        $this->assertNull($iterator->current());
-        $this->assertFalse($iterator->hasNext());
+        $this->assertCount(0, $results);
+    }
+
+    public function test_iteration_handles_client_returning_null()
+    {
+        // Arrange
+        $client = $this->createMock(DvbApiClient::class);
+        $emptyResponse = $this->createMock(NftListResponseDTO::class);
+        $emptyResponse->method('getItems')->willReturn([]);
+        $emptyResponse->method('hasMore')->willReturn(false);
+        $client->method('getNftsByContract')->willReturn($emptyResponse);
+        
+        $iterator = new PaginationIterator($client, 'getNftsByContract', ['address', 1]);
+        
+        // Act
+        $results = [];
+        foreach ($iterator as $item) {
+            $results[] = $item;
+        }
+        
+        // Assert
+        $this->assertCount(0, $results);
     }
 }

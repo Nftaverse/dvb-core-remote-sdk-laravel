@@ -40,7 +40,6 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "scripts": {
-        "test": "vendor/bin/phpunit",
-        "test:coverage": "vendor/bin/phpunit --coverage-html build/coverage --coverage-clover build/logs/clover.xml"
+        "test": "vendor/bin/phpunit"
     }
 }

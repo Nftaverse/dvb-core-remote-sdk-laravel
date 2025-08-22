@@ -7,17 +7,16 @@
     <testsuites>
         <testsuite name="Unit">
             <directory suffix="Test.php">./tests/Unit</directory>
+            <directory suffix="Test.php">./tests/Unit/DTOs</directory>
+            <directory suffix="Test.php">./tests/Unit/Exceptions</directory>
         </testsuite>
         <testsuite name="Feature">
             <directory suffix="Test.php">./tests/Feature</directory>
         </testsuite>
+        <testsuite name="Integration">
+            <directory suffix="Test.php">./tests/Integration</directory>
+        </testsuite>
     </testsuites>
-    <coverage>
-        <report>
-            <clover outputFile="build/logs/clover.xml"/>
-            <html outputDirectory="build/coverage"/>
-        </report>
-    </coverage>
     <source>
         <include>
             <directory suffix=".php">./src</directory>
@@ -28,5 +27,8 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="DVB_API_KEY" value="HMSHLvJ2N6cpz6elvx4AbykfnS0qzZw7JqnQVqabUP7tqXCSRnMoNFiscOkO4W8M"/>
+        <env name="DVB_API_DOMAIN" value="dev-epoch.nft-investment.io"/>
+        <env name="DVB_API_PROTOCOL" value="https"/>
     </php>
 </phpunit>

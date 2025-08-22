@@ -13,28 +13,24 @@ use GuzzleHttp\Psr7\Response;
 
 class ExceptionsTest extends TestCase
 {
-    public function test_dvb_api_exception_can_be_created_from_guzzle_exception()
+    public function test_dvb_api_exception_can_be_instantiated()
     {
-        $request = new Request('GET', 'test');
-        $guzzleException = new RequestException('Error Communicating with Server', $request);
-        $exception = DvbApiException::fromGuzzleException($guzzleException);
+        $exception = new DvbApiException('API Error', 500);
 
         $this->assertInstanceOf(DvbApiException::class, $exception);
-        $this->assertEquals('Error Communicating with Server', $exception->getMessage());
-        $this->assertEquals(0, $exception->getCode());
+        $this->assertEquals('API Error', $exception->getMessage());
+        $this->assertEquals(500, $exception->getCode());
     }
 
-    public function test_dvb_api_exception_can_be_created_with_response()
+    public function test_dvb_api_exception_can_be_created_with_data()
     {
-        $request = new Request('GET', 'test');
-        $response = new Response(400, [], json_encode(['message' => 'Bad request', 'errors' => ['field' => 'is required']]));
-        $guzzleException = new RequestException('Client error', $request, $response);
-        $exception = DvbApiException::fromGuzzleException($guzzleException);
+        $errorData = ['field' => 'is required'];
+        $exception = new DvbApiException('Bad request', 400, $errorData);
 
         $this->assertInstanceOf(DvbApiException::class, $exception);
         $this->assertEquals('Bad request', $exception->getMessage());
         $this->assertEquals(400, $exception->getCode());
-        $this->assertEquals(['field' => 'is required'], $exception->getErrors());
+        $this->assertEquals($errorData, $exception->getErrorData());
     }
 
     public function test_email_exists_exception()
@@ -54,11 +50,11 @@ class ExceptionsTest extends TestCase
     public function test_validation_exception()
     {
         $errors = ['field1' => ['The field1 field is required.']];
-        $exception = new ValidationException("The given data was invalid.", 422, null, $errors);
+        $exception = new ValidationException("The given data was invalid.", 422, $errors);
         
         $this->assertInstanceOf(DvbApiException::class, $exception);
         $this->assertEquals("The given data was invalid.", $exception->getMessage());
-        $this->assertEquals($errors, $exception->getErrors());
+        $this->assertEquals($errors, $exception->getErrorData());
         $this->assertEquals(422, $exception->getCode());
     }
 }

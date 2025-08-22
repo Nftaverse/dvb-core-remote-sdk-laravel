@@ -87,10 +87,10 @@ class PermissionDtoTest extends TestCase
         $this->assertInstanceOf(PermissionsResponseDTO::class, $response);
         $this->assertEquals(200, $response->code);
         $this->assertEquals('Success', $response->message);
-        $this->assertIsArray($response->data->permissions);
-        $this->assertCount(2, $response->data->permissions);
-        $this->assertInstanceOf(PermissionDTO::class, $response->data->permissions[0]);
-        $this->assertEquals('perm123', $response->data->permissions[0]->id);
+        $this->assertIsArray($response->data);
+        $this->assertCount(2, $response->data);
+        $this->assertInstanceOf(PermissionDTO::class, $response->data[0]);
+        $this->assertEquals('perm123', $response->data[0]->id);
     }
 
     public function test_permissions_response_dto_can_handle_empty_permissions()
@@ -108,8 +108,8 @@ class PermissionDtoTest extends TestCase
         $this->assertInstanceOf(PermissionsResponseDTO::class, $response);
         $this->assertEquals(200, $response->code);
         $this->assertEquals('Success', $response->message);
-        $this->assertIsArray($response->data->permissions);
-        $this->assertCount(0, $response->data->permissions);
+        $this->assertIsArray($response->data);
+        $this->assertCount(0, $response->data);
     }
 
     public function test_permissions_response_dto_can_handle_null_data()
@@ -143,7 +143,7 @@ class PermissionDtoTest extends TestCase
         $this->assertInstanceOf(CheckPermissionResponseDTO::class, $response);
         $this->assertEquals(200, $response->code);
         $this->assertEquals('Success', $response->message);
-        $this->assertTrue($response->data->hasPermission);
+        $this->assertTrue($response->data);
     }
 
     public function test_check_permission_response_dto_handles_false_permission()
@@ -161,7 +161,7 @@ class PermissionDtoTest extends TestCase
         $this->assertInstanceOf(CheckPermissionResponseDTO::class, $response);
         $this->assertEquals(200, $response->code);
         $this->assertEquals('Success', $response->message);
-        $this->assertFalse($response->data->hasPermission);
+        $this->assertFalse($response->data);
     }
 
     public function test_check_permission_response_dto_handles_missing_permission_field()
@@ -177,6 +177,6 @@ class PermissionDtoTest extends TestCase
         $this->assertInstanceOf(CheckPermissionResponseDTO::class, $response);
         $this->assertEquals(200, $response->code);
         $this->assertEquals('Success', $response->message);
-        $this->assertFalse($response->data->hasPermission);
+        $this->assertNull($response->data);
     }
 }

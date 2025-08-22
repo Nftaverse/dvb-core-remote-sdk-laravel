@@ -3,87 +3,55 @@
 namespace DVB\Core\SDK\Tests\Integration;
 
 use DVB\Core\SDK\DvbApiClient;
-use DVB\Core\SDK\Tests\TestCase as BaseTestCase;
+use Orchestra\Testbench\TestCase as BaseTestCase;
 
 abstract class IntegrationTestCase extends BaseTestCase
 {
-    /**
-     * The DvbApiClient instance.
-     *
-     * @var \DVB\Core\SDK\DvbApiClient|null
-     */
-    protected ?DvbApiClient $client = null;
+    protected DvbApiClient $client;
 
     /**
      * Set up the test case.
      *
      * @return void
      */
+    protected function getPackageProviders($app)
+    {
+        return [
+            \DVB\Core\SDK\DvbServiceProvider::class,
+        ];
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Skip integration tests if API credentials are not configured
-        if (!$this->isIntegrationTestEnabled()) {
-            $this->markTestSkipped('Integration tests are disabled. Set DVB_API_KEY and DVB_API_BASE_URL to enable.');
+        // Create the client with the API key from environment variables
+        $apiKey = env('DVB_API_KEY') ?? $_ENV['DVB_API_KEY'] ?? getenv('DVB_API_KEY') ?? null;
+        $domain = env('DVB_API_DOMAIN') ?? $_ENV['DVB_API_DOMAIN'] ?? getenv('DVB_API_DOMAIN') ?? 'dev-epoch.nft-investment.io';
+        
+        if ($apiKey) {
+            $this->client = new DvbApiClient(null, null, $apiKey, $domain);
+        } else {
+            $this->client = $this->app->make(DvbApiClient::class);
         }
-
-        $this->client = new DvbApiClient(
-            null,
-            null,
-            $this->getApiKey(),
-            $this->getBaseDomain(),
-            $this->getProtocol()
-        );
-    }
-
-    /**
-     * Check if integration tests are enabled.
-     *
-     * @return bool
-     */
-    protected function isIntegrationTestEnabled(): bool
-    {
-        return !empty($this->getApiKey()) && !empty($this->getBaseDomain());
-    }
-
-    /**
-     * Get the API key from environment variables.
-     *
-     * @return string
-     */
-    protected function getApiKey(): string
-    {
-        return $_ENV['DVB_API_KEY'] ?? $_SERVER['DVB_API_KEY'] ?? getenv('DVB_API_KEY') ?: '';
-    }
-
-    /**
-     * Get the base domain from environment variables.
-     *
-     * @return string
-     */
-    protected function getBaseDomain(): string
-    {
-        return $_ENV['DVB_API_BASE_URL'] ?? $_SERVER['DVB_API_BASE_URL'] ?? getenv('DVB_API_BASE_URL') ?: 'dev-epoch.nft-investment.io';
-    }
-
-    /**
-     * Get the protocol from environment variables.
-     *
-     * @return string
-     */
-    protected function getProtocol(): string
-    {
-        return $_ENV['DVB_API_PROTOCOL'] ?? $_SERVER['DVB_API_PROTOCOL'] ?? getenv('DVB_API_PROTOCOL') ?: 'https';
     }
 
     /**
      * Get the DvbApiClient instance.
      *
-     * @return \DVB\Core\SDK\DvbApiClient
+     * @return DvbApiClient
      */
     protected function getClient(): DvbApiClient
     {
         return $this->client;
+    }
+
+    public static function isIntegrationTestEnabled(): bool
+    {
+        // Check multiple sources for environment variables
+        $apiKey = env('DVB_API_KEY') ?? $_ENV['DVB_API_KEY'] ?? getenv('DVB_API_KEY') ?? null;
+        $domain = env('DVB_API_DOMAIN') ?? $_ENV['DVB_API_DOMAIN'] ?? getenv('DVB_API_DOMAIN') ?? null;
+        
+        return !empty($apiKey) && !empty($domain);
     }
 }

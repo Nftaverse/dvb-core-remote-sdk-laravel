@@ -32,6 +32,7 @@ class GetProfileTest extends TestCase
         $httpClient = new Client(['handler' => $handlerStack]);
 
         $client = new DvbApiClient($httpClient, null, 'test-key');
+        $client->useGuzzleHttp(); // Use GuzzleHttp directly for Unit tests
 
         // Act
         $response = $client->getProfile();
@@ -55,9 +56,64 @@ class GetProfileTest extends TestCase
         $httpClient = new Client(['handler' => $handlerStack]);
 
         $client = new DvbApiClient($httpClient, null, 'invalid-key');
+        $client->useGuzzleHttp(); // Use GuzzleHttp directly for Unit tests
 
         // Assert
         $this->expectException(DvbApiException::class);
+
+        // Act
+        $client->getProfile();
+    }
+
+    /**
+     * @dataProvider apiErrorProvider
+     */
+    public function test_it_throws_exception_on_various_api_errors(int $statusCode, string $message)
+    {
+        // Arrange
+        $mock = new MockHandler([
+            new Response($statusCode, [], json_encode(['message' => $message]))
+        ]);
+
+        $handlerStack = HandlerStack::create($mock);
+        $httpClient = new Client(['handler' => $handlerStack]);
+
+        $client = new DvbApiClient($httpClient, null, 'test-key');
+        $client->useGuzzleHttp(); // Use GuzzleHttp directly for Unit tests
+
+        // Assert
+        $this->expectException(DvbApiException::class);
+        $this->expectExceptionCode($statusCode);
+
+        // Act
+        $client->getProfile();
+    }
+
+    public static function apiErrorProvider(): array
+    {
+        return [
+            '403 Forbidden' => [403, 'Forbidden'],
+            '404 Not Found' => [404, 'Not Found'],
+            '500 Internal Server Error' => [500, 'Internal Server Error'],
+        ];
+    }
+
+    public function test_it_throws_exception_on_invalid_json_response()
+    {
+        // Arrange
+        $mock = new MockHandler([
+            new Response(200, [], '{"bad-json":')
+        ]);
+
+        $handlerStack = HandlerStack::create($mock);
+        $httpClient = new Client(['handler' => $handlerStack]);
+
+        $client = new DvbApiClient($httpClient, null, 'test-key');
+        $client->useGuzzleHttp(); // Use GuzzleHttp directly for Unit tests
+
+        // Assert
+        $this->expectException(DvbApiException::class);
+        $this->expectExceptionMessage('Invalid JSON response from API');
 
         // Act
         $client->getProfile();

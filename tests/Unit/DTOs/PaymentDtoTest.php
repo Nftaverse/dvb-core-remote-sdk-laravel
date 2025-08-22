@@ -26,7 +26,7 @@ class PaymentDtoTest extends TestCase
         $this->assertEquals('pm123', $paymentMethod->id);
         $this->assertEquals('Credit Card', $paymentMethod->name);
         $this->assertEquals('card', $paymentMethod->type);
-        $this->assertTrue($paymentMethod->isDefault);
+        $this->assertTrue($paymentMethod->is_default);
         $this->assertEquals('2023-01-01T00:00:00Z', $paymentMethod->createdAt);
     }
 
@@ -44,7 +44,7 @@ class PaymentDtoTest extends TestCase
         $this->assertEquals('pm123', $paymentMethod->id);
         $this->assertEquals('Credit Card', $paymentMethod->name);
         $this->assertEquals('card', $paymentMethod->type);
-        $this->assertFalse($paymentMethod->isDefault);
+        $this->assertFalse($paymentMethod->is_default);
         $this->assertNull($paymentMethod->createdAt);
     }
 
@@ -64,7 +64,7 @@ class PaymentDtoTest extends TestCase
         $this->assertEquals('pm123', $paymentMethod->id);
         $this->assertEquals('Credit Card', $paymentMethod->name);
         $this->assertEquals('card', $paymentMethod->type);
-        $this->assertFalse($paymentMethod->isDefault);
+        $this->assertFalse($paymentMethod->is_default);
         $this->assertNull($paymentMethod->createdAt);
     }
 

@@ -2,6 +2,7 @@
 
 namespace DVB\Core\SDK\Tests;
 
+use Dotenv\Dotenv;
 use Orchestra\Testbench\TestCase as OrchestraTestCase;
 
 abstract class TestCase extends OrchestraTestCase
@@ -34,5 +35,12 @@ abstract class TestCase extends OrchestraTestCase
             'database' => ':memory:',
             'prefix'   => '',
         ]);
+        
+        // Load test environment variables using Dotenv
+        $envFile = __DIR__ . '/../.env.testing';
+        if (file_exists($envFile)) {
+            $dotenv = Dotenv::createUnsafeImmutable(dirname($envFile), basename($envFile));
+            $dotenv->load();
+        }
     }
 }

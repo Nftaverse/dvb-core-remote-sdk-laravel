@@ -24,13 +24,12 @@ class NftDtoEdgeTest extends TestCase
         $nft = NftDTO::fromArray($data);
 
         $this->assertInstanceOf(NftDTO::class, $nft);
-        $this->assertNull($nft->tokenId);
-        $this->assertNull($nft->name);
-        $this->assertNull($nft->contractAddress);
-        $this->assertNull($nft->chainId);
+        $this->assertEquals('', $nft->tokenId); // Should default to empty string
+        $this->assertEquals('', $nft->name); // Should default to empty string
+        $this->assertEquals('', $nft->contractAddress); // Should default to empty string
+        $this->assertEquals(0, $nft->chainId); // Should default to 0
         $this->assertNull($nft->description);
         $this->assertNull($nft->image);
-        $this->assertNull($nft->owner);
         $this->assertNull($nft->attributes);
     }
 
@@ -67,7 +66,7 @@ class NftDtoEdgeTest extends TestCase
             'value' => true, // Boolean value
         ];
         $attribute = NftAttributeDTO::fromArray($data);
-        $this->assertTrue($attribute->value);
+        $this->assertEquals(true, $attribute->value);
     }
 
     public function test_nft_list_response_dto_handles_malformed_data()

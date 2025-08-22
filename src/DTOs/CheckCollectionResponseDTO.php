@@ -18,7 +18,7 @@ class CheckCollectionResponseDTO extends ApiResponse
         return new self(
             $data['code'] ?? 0,
             $data['message'] ?? '',
-            $data['data']['isValid'] ?? null,
+            $data['data'] ?? null,
         );
     }
 }

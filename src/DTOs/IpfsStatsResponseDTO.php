@@ -15,11 +15,12 @@ class IpfsStatsResponseDTO extends ApiResponse
 
     public static function fromArray(array $data): self
     {
-        $stats = isset($data['data']) ? IpfsStatsDTO::fromArray($data['data']) : null;
+        // Handle the actual API response structure
+        $stats = isset($data['user_stats']) ? IpfsStatsDTO::fromArray($data) : null;
 
         return new self(
-            $data['code'] ?? 0,
-            $data['message'] ?? '',
+            $data['code'] ?? ($data['success'] ? 200 : 0),
+            $data['message'] ?? 'success',
             $stats
         );
     }

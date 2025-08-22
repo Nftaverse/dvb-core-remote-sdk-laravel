@@ -15,9 +15,11 @@ class IpfsStatsDTO
 
     public static function fromArray(array $data): self
     {
+        // Handle the actual API response structure
+        $userData = $data['user_stats'] ?? $data;
         return new self(
-            $data['totalUploads'] ?? 0,
-            $data['totalSize'] ?? 0
+            $userData['total_uploads'] ?? 0,
+            $userData['total_storage'] ?? 0
         );
     }
 }

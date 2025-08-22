@@ -2,12 +2,14 @@
 
 namespace DVB\Core\SDK\DTOs;
 
-class UserNftResponseDTO extends ApiResponse implements PaginatedResponseInterface
+use DVB\Core\SDK\DTOs\PaginatedCollectionDataDTO;
+
+class CollectionListResponseDTO extends ApiResponse implements PaginatedResponseInterface
 {
-    /** @var PaginatedNftDataDTO|null */
+    /** @var PaginatedCollectionDataDTO|null */
     public mixed $data;
 
-    public function __construct(int $code, string $message, ?PaginatedNftDataDTO $data = null)
+    public function __construct(int $code, string $message, ?PaginatedCollectionDataDTO $data = null)
     {
         parent::__construct($code, $message);
         $this->data = $data;
@@ -15,7 +17,8 @@ class UserNftResponseDTO extends ApiResponse implements PaginatedResponseInterfa
 
     public static function fromArray(array $data): self
     {
-        $paginatedData = isset($data['data']) ? PaginatedNftDataDTO::fromArray($data['data']) : null;
+        $paginatedData = isset($data['data']) ? PaginatedCollectionDataDTO::fromArray($data['data']) : null;
+
         return new self(
             $data['code'] ?? 0,
             $data['message'] ?? '',
@@ -33,13 +36,8 @@ class UserNftResponseDTO extends ApiResponse implements PaginatedResponseInterfa
         return $this->data?->hasMore ?? false;
     }
 
-    public function getItems(): array
+    public function getItems(): ?array
     {
-        return $this->data?->items ?? [];
-    }
-    
-    public function getNextCursor(): ?string
-    {
-        return $this->data?->cursor;
+        return $this->data?->items;
     }
 }

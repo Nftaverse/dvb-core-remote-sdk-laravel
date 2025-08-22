@@ -8,6 +8,7 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\ServerException;
+use Illuminate\Support\Facades\Http;
 use JsonException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -32,6 +33,8 @@ use DVB\Core\SDK\DTOs\NetworkDetailResponseDTO;
 use DVB\Core\SDK\DTOs\IpfsUploadResponseDTO;
 use DVB\Core\SDK\DTOs\IpfsFolderUploadResponseDTO;
 use DVB\Core\SDK\DTOs\IpfsStatsResponseDTO;
+use DVB\Core\SDK\DTOs\CollectionListResponseDTO;
+use DVB\Core\SDK\DTOs\UserNftResponseDTO;
 
 class DvbApiClient
 {
@@ -42,6 +45,7 @@ class DvbApiClient
     protected string $protocol;
     protected int $timeout;
     protected int $connectTimeout;
+    protected bool $useLaravelHttp = false;
 
     /**
      * Create a new DvbApiClient instance.
@@ -181,36 +185,88 @@ class DvbApiClient
         try {
             $url = $this->getBaseUrl() . '/' . ltrim($endpoint, '/');
             
-            $options = array_merge_recursive($options, [
-                'headers' => [
-                    'Accept' => 'application/json',
-                    'Authorization' => 'Bearer ' . $this->apiKey,
-                ],
-                'timeout' => $this->timeout,
-                'connect_timeout' => $this->connectTimeout,
-            ]);
+            // Prepare headers
+            $headers = [
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $this->apiKey,
+            ];
 
             if (!isset($options['headers']['Content-Type'])) {
-                $options['headers']['Content-Type'] = 'application/json';
+                $headers['Content-Type'] = 'application/json';
             }
+
+            // Merge headers with existing options
+            $options['headers'] = array_merge($options['headers'] ?? [], $headers);
+            
+            // Set timeout options
+            $options['timeout'] = $this->timeout;
+            $options['connect_timeout'] = $this->connectTimeout;
 
             $this->logger->info("Making {$method} request to {$url}", $options);
 
-            $response = $this->httpClient->request($method, $url, $options);
-            $body = $response->getBody()->getContents();
+            // Use Laravel Http facade for Feature tests, GuzzleHttp for Unit tests
+            if ($this->useLaravelHttp) {
+                // Convert Guzzle-style options to Laravel Http style
+                $laravelOptions = [
+                    'headers' => $options['headers'] ?? [],
+                    'timeout' => $options['timeout'],
+                    'connect_timeout' => $options['connect_timeout'],
+                ];
+
+                // Handle different request types
+                if (isset($options['json'])) {
+                    $laravelOptions['json'] = $options['json'];
+                }
+
+                if (isset($options['query'])) {
+                    $laravelOptions['query'] = $options['query'];
+                }
+
+                // Use Laravel Http client
+                $http = Http::withOptions($laravelOptions);
+                
+                // Handle multipart requests
+                if (isset($options['multipart'])) {
+                    $http = $http->asMultipart();
+                    foreach ($options['multipart'] as $part) {
+                        $http = $http->attach($part['name'], $part['contents']);
+                    }
+                    $response = $http->{strtolower($method)}($url);
+                } else {
+                    $response = $http->{strtolower($method)}($url);
+                }
+
+                $body = $response->body();
+                $statusCode = $response->status();
+                
+                // Handle error responses
+                if ($statusCode >= 400) {
+                    $this->logger->error("API request failed with status {$statusCode}: {$body}");
+                    throw new DvbApiException("API request failed with status {$statusCode}: {$body}", $statusCode);
+                }
+            } else {
+                $response = $this->httpClient->request($method, $url, $options);
+                $body = $response->getBody()->getContents();
+                $statusCode = $response->getStatusCode();
+            }
             
             try {
                 $data = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
             } catch (JsonException $e) {
-                throw new DvbApiException('Invalid JSON response from API', $response->getStatusCode(), [], $e);
+                throw new DvbApiException('Invalid JSON response from API', $statusCode, [], $e);
             }
 
             return $data ?: [];
         } catch (ClientException $e) {
             if ($e->getResponse()->getStatusCode() === 422) {
                 $errorBody = json_decode($e->getResponse()->getBody()->getContents(), true);
+                $message = $errorBody['message'] ?? 'Validation failed';
+                // Ensure message is a string
+                if (is_array($message)) {
+                    $message = json_encode($message);
+                }
                 throw new ValidationException(
-                    $errorBody['message'] ?? 'Validation failed',
+                    $message,
                     $e->getCode(),
                     $errorBody['errors'] ?? [],
                     $e
@@ -310,6 +366,28 @@ class DvbApiClient
     public function setProtocol(string $protocol): self
     {
         $this->protocol = $protocol;
+        return $this;
+    }
+
+    /**
+     * Enable Laravel Http facade for Feature tests.
+     *
+     * @return $this
+     */
+    public function useLaravelHttp(): self
+    {
+        $this->useLaravelHttp = true;
+        return $this;
+    }
+
+    /**
+     * Disable Laravel Http facade and use GuzzleHttp directly.
+     *
+     * @return $this
+     */
+    public function useGuzzleHttp(): self
+    {
+        $this->useLaravelHttp = false;
         return $this;
     }
 
@@ -464,6 +542,28 @@ class DvbApiClient
     }
 
     /**
+     * Get collections list.
+     *
+     * @param int $chainId
+     * @param string|null $cursor
+     * @return \DVB\Core\SDK\DTOs\CollectionListResponseDTO
+     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
+     */
+    public function getCollections(int $chainId, ?string $cursor = null): CollectionListResponseDTO
+    {
+        $query = [
+            'chain_id' => $chainId,
+        ];
+        
+        if ($cursor) {
+            $query['cursor'] = $cursor;
+        }
+
+        $response = $this->get('collection', $query);
+        return CollectionListResponseDTO::fromArray($response);
+    }
+
+    /**
      * Get collection events.
      *
      * @param string $address
@@ -474,7 +574,7 @@ class DvbApiClient
     public function getCollectionEvents(string $address, int $chainId): CollectionEventListResponseDTO
     {
         $response = $this->get("collection/{$address}/event", [
-            'chainId' => $chainId,
+            'chain_id' => $chainId,
         ]);
         return CollectionEventListResponseDTO::fromArray($response);
     }
@@ -490,10 +590,10 @@ class DvbApiClient
      */
     public function checkCollection(int $chainId, string $address, string $toAddress): CheckCollectionResponseDTO
     {
-        $response = $this->post('collection/check', [
-            'chainId' => $chainId,
+        $response = $this->post('collection/check', [], [
+            'chain_id' => $chainId,
             'address' => $address,
-            'toAddress' => $toAddress,
+            'to_address' => $toAddress,
         ]);
         return CheckCollectionResponseDTO::fromArray($response);
     }
@@ -510,7 +610,7 @@ class DvbApiClient
     public function getNftsByContract(string $address, int $chainId, ?string $cursor = null): NftListResponseDTO
     {
         $query = [
-            'chainId' => $chainId,
+            'chain_id' => $chainId,
         ];
         
         if ($cursor) {
@@ -533,7 +633,7 @@ class DvbApiClient
     public function getNftMetadata(string $address, string $tokenId, int $chainId): NftMetadataResponseDTO
     {
         $response = $this->get("nft/{$address}/{$tokenId}/metadata", [
-            'chainId' => $chainId,
+            'chain_id' => $chainId,
         ]);
         return NftMetadataResponseDTO::fromArray($response);
     }

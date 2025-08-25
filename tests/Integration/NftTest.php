@@ -13,7 +13,7 @@ class NftTest extends IntegrationTestCase
     public function test_get_nfts_by_contract_returns_nfts_data()
     {
         // Skip if integration tests are disabled
-        if (!$this->isIntegrationTestEnabled()) {
+        if (!self::isIntegrationTestEnabled()) {
             $this->markTestSkipped('Integration tests are disabled.');
         }
 
@@ -87,7 +87,7 @@ class NftTest extends IntegrationTestCase
     public function test_get_nft_metadata_returns_metadata()
     {
         // Skip if integration tests are disabled
-        if (!$this->isIntegrationTestEnabled()) {
+        if (!self::isIntegrationTestEnabled()) {
             $this->markTestSkipped('Integration tests are disabled.');
         }
 

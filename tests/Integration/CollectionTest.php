@@ -6,6 +6,7 @@ use DVB\Core\SDK\DTOs\CollectionEventDTO;
 use DVB\Core\SDK\DTOs\CollectionEventListResponseDTO;
 use DVB\Core\SDK\DTOs\CheckCollectionResponseDTO;
 use DVB\Core\SDK\Exceptions\DvbApiException;
+use DVB\Core\SDK\Exceptions\ValidationException;
 
 class CollectionTest extends IntegrationTestCase
 {
@@ -14,7 +15,7 @@ class CollectionTest extends IntegrationTestCase
         $client = $this->getClient();
         
         // Skip if integration tests are disabled
-        if (!$this->isIntegrationTestEnabled()) {
+        if (!self::isIntegrationTestEnabled()) {
             $this->markTestSkipped('Integration tests are disabled.');
         }
         
@@ -90,11 +91,15 @@ class CollectionTest extends IntegrationTestCase
             throw $e;
         }
     }
-    
+
+    /**
+     * @throws ValidationException
+     * @throws DvbApiException
+     */
     public function test_check_collection_returns_validation_status()
     {
         // Skip if integration tests are disabled
-        if (!$this->isIntegrationTestEnabled()) {
+        if (!self::isIntegrationTestEnabled()) {
             echo "Integration tests are disabled.\n";
             $this->markTestSkipped('Integration tests are disabled.');
         }
@@ -162,13 +167,10 @@ class CollectionTest extends IntegrationTestCase
                         switch ($errorCode) {
                             case 3002: // Collection address invalid
                                 $this->markTestSkipped('Collection address invalid.');
-                                break;
                             case 3005: // Collection owner invalid
                                 $this->markTestSkipped('Collection owner invalid.');
-                                break;
                             case 5002: // Wallet address invalid
                                 $this->markTestSkipped('Wallet address invalid.');
-                                break;
                             default:
                                 // For other 400 errors, re-throw
                                 throw $e;
@@ -185,13 +187,10 @@ class CollectionTest extends IntegrationTestCase
                         switch ($errorCode) {
                             case 3002: // Collection address invalid
                                 $this->markTestSkipped('Collection address invalid.');
-                                break;
                             case 3005: // Collection owner invalid
                                 $this->markTestSkipped('Collection owner invalid.');
-                                break;
                             case 5002: // Wallet address invalid
                                 $this->markTestSkipped('Wallet address invalid.');
-                                break;
                             default:
                                 // For other 400 errors, re-throw
                                 throw $e;

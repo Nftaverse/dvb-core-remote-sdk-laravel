@@ -48,7 +48,9 @@ class PaginationIteratorTest extends TestCase
                     $this->assertEquals(1, $chainId);
                     $this->assertNull($cursor);
                     return $firstPageResponse;
-                } elseif ($callCount === 2) {
+                }
+
+                if ($callCount === 2) {
                     $this->assertEquals('address', $address);
                     $this->assertEquals(1, $chainId);
                     $this->assertEquals('cursor1', $cursor);

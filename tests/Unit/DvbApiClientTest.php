@@ -34,27 +34,27 @@ use Psr\Log\LoggerInterface;
 
 class DvbApiClientTest extends TestCase
 {
-    public function test_it_can_be_instantiated()
+    public function test_it_can_be_instantiated(): void
     {
         $client = new DvbApiClient();
         
         $this->assertInstanceOf(DvbApiClient::class, $client);
     }
 
-    public function test_it_can_be_instantiated_with_dependencies()
+    public function test_it_can_be_instantiated_with_dependencies(): void
     {
         $httpClient = $this->createMock(ClientInterface::class);
         $logger = $this->createMock(LoggerInterface::class);
         
         $client = new DvbApiClient($httpClient, $logger, 'test-key', 'test-domain', 'http');
-        
+
         $this->assertInstanceOf(DvbApiClient::class, $client);
         $this->assertEquals('test-key', $client->getApiKey());
         $this->assertEquals('test-domain', $client->getBaseDomain());
         $this->assertEquals('http', $client->getProtocol());
     }
 
-    public function test_get_profile_returns_user_response_dto()
+    public function test_get_profile_returns_user_response_dto(): void
     {
         // Arrange
         $httpClient = $this->createMock(ClientInterface::class);
@@ -995,7 +995,7 @@ class DvbApiClientTest extends TestCase
             ->willReturn(new Response(200, [], json_encode($expectedResponse)));
         
         // Act
-        $result = $client->uploadFolderToIpfs([fopen('php://memory', 'r')]);
+        $result = $client->uploadFolderToIpfs([fopen('php://memory', 'rb')]);
         
         // Assert
         $this->assertInstanceOf(IpfsFolderUploadResponseDTO::class, $result);

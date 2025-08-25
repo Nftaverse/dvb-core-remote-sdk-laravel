@@ -12,7 +12,7 @@ class WebhookTest extends IntegrationTestCase
     public function test_get_webhooks_returns_webhooks_list()
     {
         // Skip if integration tests are disabled
-        if (!$this->isIntegrationTestEnabled()) {
+        if (!self::isIntegrationTestEnabled()) {
             $this->markTestSkipped('Integration tests are disabled.');
         }
 
@@ -38,7 +38,7 @@ class WebhookTest extends IntegrationTestCase
     public function test_create_and_delete_webhook()
     {
         // Skip if integration tests are disabled
-        if (!$this->isIntegrationTestEnabled()) {
+        if (!self::isIntegrationTestEnabled()) {
             $this->markTestSkipped('Integration tests are disabled.');
         }
 
@@ -47,7 +47,7 @@ class WebhookTest extends IntegrationTestCase
         try {
             // Create a webhook with a valid type
             // Using a unique URL for each test run to avoid conflicts
-            $uniqueId = uniqid();
+            $uniqueId = uniqid('', true);
             $createResponse = $client->createWebhook("https://example.nft-investment.io/webhook-{$uniqueId}", \DVB\Core\SDK\Enums\WebhookType::deploy_collection);
 
             $this->assertInstanceOf(WebhookListResponseDTO::class, $createResponse);

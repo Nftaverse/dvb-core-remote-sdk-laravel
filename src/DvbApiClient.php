@@ -2,17 +2,16 @@
 
 namespace DVB\Core\SDK;
 
-use DVB\Core\SDK\Exceptions\ValidationException;
-use GuzzleHttp\Client;
-use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Exception\ServerException;
-use Illuminate\Support\Facades\Http;
-use JsonException;
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
-use DVB\Core\SDK\Exceptions\DvbApiException;
+use DVB\Core\SDK\Client\DvbBaseClient;
+use DVB\Core\SDK\Client\UserClient;
+use DVB\Core\SDK\Client\PermissionClient;
+use DVB\Core\SDK\Client\CommunicationClient;
+use DVB\Core\SDK\Client\CollectionClient;
+use DVB\Core\SDK\Client\NftClient;
+use DVB\Core\SDK\Client\WebhookClient;
+use DVB\Core\SDK\Client\PaymentClient;
+use DVB\Core\SDK\Client\NetworkClient;
+use DVB\Core\SDK\Client\IpfsClient;
 use DVB\Core\SDK\DTOs\UserResponseDTO;
 use DVB\Core\SDK\DTOs\PermissionsResponseDTO;
 use DVB\Core\SDK\DTOs\CheckPermissionResponseDTO;
@@ -36,17 +35,101 @@ use DVB\Core\SDK\DTOs\IpfsFolderUploadResponseDTO;
 use DVB\Core\SDK\DTOs\IpfsStatsResponseDTO;
 use DVB\Core\SDK\DTOs\CollectionListResponseDTO;
 use DVB\Core\SDK\DTOs\UserNftResponseDTO;
+use GuzzleHttp\ClientInterface;
+use Psr\Log\LoggerInterface;
 
-class DvbApiClient
+class DvbApiClient extends DvbBaseClient
 {
-    protected ClientInterface $httpClient;
-    protected LoggerInterface $logger;
-    protected string $apiKey;
-    protected string $baseDomain;
-    protected string $protocol;
-    protected int $timeout;
-    protected int $connectTimeout;
-    protected bool $useLaravelHttp = false;
+    /**
+     * @var UserClient
+     */
+    protected UserClient $userClient;
+
+    /**
+     * @var PermissionClient
+     */
+    protected PermissionClient $permissionClient;
+
+    /**
+     * @var CommunicationClient
+     */
+    protected CommunicationClient $communicationClient;
+
+    /**
+     * @var CollectionClient
+     */
+    protected CollectionClient $collectionClient;
+
+    /**
+     * @var NftClient
+     */
+    protected NftClient $nftClient;
+
+    /**
+     * @var WebhookClient
+     */
+    protected WebhookClient $webhookClient;
+
+    /**
+     * @var PaymentClient
+     */
+    protected PaymentClient $paymentClient;
+
+    /**
+     * @var NetworkClient
+     */
+    protected NetworkClient $networkClient;
+
+    /**
+     * @var IpfsClient
+     */
+    protected IpfsClient $ipfsClient;
+
+    /**
+     * Enable Laravel Http facade for Feature tests.
+     *
+     * @return $this
+     */
+    public function useLaravelHttp(): self
+    {
+        parent::useLaravelHttp();
+        
+        // Also enable Laravel Http for all child clients
+        $this->userClient->useLaravelHttp();
+        $this->permissionClient->useLaravelHttp();
+        $this->communicationClient->useLaravelHttp();
+        $this->collectionClient->useLaravelHttp();
+        $this->nftClient->useLaravelHttp();
+        $this->webhookClient->useLaravelHttp();
+        $this->paymentClient->useLaravelHttp();
+        $this->networkClient->useLaravelHttp();
+        $this->ipfsClient->useLaravelHttp();
+        
+        return $this;
+    }
+
+    /**
+     * Disable Laravel Http facade and use GuzzleHttp directly.
+     *
+     * @return $this
+     */
+    public function useGuzzleHttp(): self
+    {
+        parent::useGuzzleHttp();
+        
+        // Also disable Laravel Http for all child clients
+        $this->userClient->useGuzzleHttp();
+        $this->permissionClient->useGuzzleHttp();
+        $this->communicationClient->useGuzzleHttp();
+        $this->collectionClient->useGuzzleHttp();
+        $this->nftClient->useGuzzleHttp();
+        $this->webhookClient->useGuzzleHttp();
+        $this->paymentClient->useGuzzleHttp();
+        $this->networkClient->useGuzzleHttp();
+        $this->ipfsClient->useGuzzleHttp();
+        
+        return $this;
+    }
 
     /**
      * Create a new DvbApiClient instance.
@@ -68,13 +151,18 @@ class DvbApiClient
         int $timeout = 30,
         int $connectTimeout = 10
     ) {
-        $this->httpClient = $httpClient ?? new Client();
-        $this->logger = $logger ?? new NullLogger();
-        $this->setApiKey($apiKey);
-        $this->setBaseDomain($baseDomain);
-        $this->setProtocol($protocol);
-        $this->timeout = $timeout;
-        $this->connectTimeout = $connectTimeout;
+        parent::__construct($httpClient, $logger, $apiKey, $baseDomain, $protocol, $timeout, $connectTimeout);
+        
+        // Initialize all clients
+        $this->userClient = new UserClient($httpClient, $logger, $apiKey, $baseDomain, $protocol, $timeout, $connectTimeout);
+        $this->permissionClient = new PermissionClient($httpClient, $logger, $apiKey, $baseDomain, $protocol, $timeout, $connectTimeout);
+        $this->communicationClient = new CommunicationClient($httpClient, $logger, $apiKey, $baseDomain, $protocol, $timeout, $connectTimeout);
+        $this->collectionClient = new CollectionClient($httpClient, $logger, $apiKey, $baseDomain, $protocol, $timeout, $connectTimeout);
+        $this->nftClient = new NftClient($httpClient, $logger, $apiKey, $baseDomain, $protocol, $timeout, $connectTimeout);
+        $this->webhookClient = new WebhookClient($httpClient, $logger, $apiKey, $baseDomain, $protocol, $timeout, $connectTimeout);
+        $this->paymentClient = new PaymentClient($httpClient, $logger, $apiKey, $baseDomain, $protocol, $timeout, $connectTimeout);
+        $this->networkClient = new NetworkClient($httpClient, $logger, $apiKey, $baseDomain, $protocol, $timeout, $connectTimeout);
+        $this->ipfsClient = new IpfsClient($httpClient, $logger, $apiKey, $baseDomain, $protocol, $timeout, $connectTimeout);
     }
 
     /**
@@ -101,830 +189,168 @@ class DvbApiClient
         return new static($httpClient, $logger, $apiKey, $baseDomain, $protocol, $timeout, $connectTimeout);
     }
 
-
-    /**
-     * Get the base URL for API requests.
-     *
-     * @return string
-     */
-    protected function getBaseUrl(): string
-    {
-        return "{$this->protocol}://{$this->baseDomain}/api/remote/v1";
-    }
-
-    /**
-     * Make a GET request to the API.
-     *
-     * @param string $endpoint
-     * @param array $query
-     * @return array
-     * @throws DvbApiException
-     */
-    protected function get(string $endpoint, array $query = []): array
-    {
-        return $this->request('GET', $endpoint, [
-            'query' => $query,
-        ]);
-    }
-
-    /**
-     * Make a POST request to the API.
-     *
-     * @param string $endpoint
-     * @param array $data
-     * @param array $query
-     * @return array
-     * @throws DvbApiException
-     */
-    protected function post(string $endpoint, array $data = [], array $query = []): array
-    {
-        $options = ['json' => $data];
-        if (!empty($query)) {
-            $options['query'] = $query;
-        }
-        return $this->request('POST', $endpoint, $options);
-    }
-
-    /**
-     * Make a PUT request to the API.
-     *
-     * @param string $endpoint
-     * @param array $data
-     * @return array
-     * @throws DvbApiException
-     */
-    protected function put(string $endpoint, array $data = []): array
-    {
-        return $this->request('PUT', $endpoint, [
-            'json' => $data,
-        ]);
-    }
-
-    /**
-     * Make a DELETE request to the API.
-     *
-     * @param string $endpoint
-     * @return array
-     * @throws DvbApiException
-     */
-    protected function delete(string $endpoint): array
-    {
-        return $this->request('DELETE', $endpoint);
-    }
-
-    /**
-     * Make an HTTP request to the API.
-     *
-     * @param string $method
-     * @param string $endpoint
-     * @param array $options
-     * @return array
-     * @throws DvbApiException
-     */
-    protected function request(string $method, string $endpoint, array $options = []): array
-    {
-        try {
-            $url = $this->getBaseUrl() . '/' . ltrim($endpoint, '/');
-            
-            // Prepare headers
-            $headers = [
-                'Accept' => 'application/json',
-                'Authorization' => 'Bearer ' . $this->apiKey,
-            ];
-
-            if (!isset($options['headers']['Content-Type'])) {
-                $headers['Content-Type'] = 'application/json';
-            }
-
-            // Merge headers with existing options
-            $options['headers'] = array_merge($options['headers'] ?? [], $headers);
-            
-            // Set timeout options
-            $options['timeout'] = $this->timeout;
-            $options['connect_timeout'] = $this->connectTimeout;
-
-            $this->logger->info("Making {$method} request to {$url}", $options);
-
-            // Use Laravel Http facade for Feature tests, GuzzleHttp for Unit tests
-            if ($this->useLaravelHttp) {
-                // Convert Guzzle-style options to Laravel Http style
-                $laravelOptions = [
-                    'headers' => $options['headers'] ?? [],
-                    'timeout' => $options['timeout'],
-                    'connect_timeout' => $options['connect_timeout'],
-                ];
-
-                // Handle different request types
-                if (isset($options['json'])) {
-                    $laravelOptions['json'] = $options['json'];
-                }
-
-                if (isset($options['query'])) {
-                    $laravelOptions['query'] = $options['query'];
-                }
-
-                // Use Laravel Http client
-                $http = Http::withOptions($laravelOptions);
-                
-                // Handle multipart requests
-                if (isset($options['multipart'])) {
-                    $http = $http->asMultipart();
-                    foreach ($options['multipart'] as $part) {
-                        $http = $http->attach($part['name'], $part['contents']);
-                    }
-                    $response = $http->{strtolower($method)}($url);
-                } else {
-                    $response = $http->{strtolower($method)}($url);
-                }
-
-                $body = $response->body();
-                $statusCode = $response->status();
-                
-                // Handle error responses
-                if ($statusCode >= 400) {
-                    $this->logger->error("API request failed with status {$statusCode}: {$body}");
-                    throw new DvbApiException("API request failed with status {$statusCode}: {$body}", $statusCode);
-                }
-            } else {
-                $response = $this->httpClient->request($method, $url, $options);
-                $body = $response->getBody()->getContents();
-                $statusCode = $response->getStatusCode();
-            }
-            
-            try {
-                $data = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
-            } catch (JsonException $e) {
-                throw new DvbApiException('Invalid JSON response from API', $statusCode, [], $e);
-            }
-
-            return $data ?: [];
-        } catch (ClientException $e) {
-            if ($e->getResponse()->getStatusCode() === 422) {
-                $errorBody = json_decode($e->getResponse()->getBody()->getContents(), true);
-                $message = $errorBody['message'] ?? 'Validation failed';
-                // Ensure message is a string
-                if (is_array($message)) {
-                    $message = json_encode($message);
-                }
-                throw new ValidationException(
-                    $message,
-                    $e->getCode(),
-                    $errorBody['errors'] ?? [],
-                    $e
-                );
-            }
-            $this->logger->error("API Client Exception: " . $e->getMessage());
-            throw new DvbApiException("API request failed: " . $e->getMessage(), $e->getCode(), [], $e);
-        } catch (ServerException $e) {
-            $this->logger->error("API Server Exception: " . $e->getMessage());
-            throw new DvbApiException("API server error: " . $e->getMessage(), $e->getCode(), [], $e);
-        } catch (GuzzleException $e) {
-            $this->logger->error("API request failed: " . $e->getMessage());
-            throw new DvbApiException("API request failed: " . $e->getMessage(), $e->getCode(), [], $e);
-        }
-    }
-
-    /**
-     * Get the HTTP client instance.
-     *
-     * @return \GuzzleHttp\ClientInterface
-     */
-    public function getHttpClient(): ClientInterface
-    {
-        return $this->httpClient;
-    }
-
-    /**
-     * Get the logger instance.
-     *
-     * @return \Psr\Log\LoggerInterface
-     */
-    public function getLogger(): LoggerInterface
-    {
-        return $this->logger;
-    }
-
-    /**
-     * Get the API key.
-     *
-     * @return string
-     */
-    public function getApiKey(): string
-    {
-        return $this->apiKey;
-    }
-
-    /**
-     * Get the base domain.
-     *
-     * @return string
-     */
-    public function getBaseDomain(): string
-    {
-        return $this->baseDomain;
-    }
-
-    /**
-     * Get the protocol.
-     *
-     * @return string
-     */
-    public function getProtocol(): string
-    {
-        return $this->protocol;
-    }
-
-    /**
-     * Set the API key.
-     *
-     * @param string $apiKey
-     * @return $this
-     */
-    public function setApiKey(string $apiKey): self
-    {
-        $this->apiKey = $apiKey;
-        return $this;
-    }
-
-    /**
-     * Set the base domain.
-     *
-     * @param string $baseDomain
-     * @return $this
-     */
-    public function setBaseDomain(string $baseDomain): self
-    {
-        $this->baseDomain = $baseDomain;
-        return $this;
-    }
-
-    /**
-     * Set the protocol.
-     *
-     * @param string $protocol
-     * @return $this
-     */
-    public function setProtocol(string $protocol): self
-    {
-        $this->protocol = $protocol;
-        return $this;
-    }
-
-    /**
-     * Enable Laravel Http facade for Feature tests.
-     *
-     * @return $this
-     */
-    public function useLaravelHttp(): self
-    {
-        $this->useLaravelHttp = true;
-        return $this;
-    }
-
-    /**
-     * Disable Laravel Http facade and use GuzzleHttp directly.
-     *
-     * @return $this
-     */
-    public function useGuzzleHttp(): self
-    {
-        $this->useLaravelHttp = false;
-        return $this;
-    }
-
-    /**
-     * Create a new user.
-     *
-     * @param string $email
-     * @param string|null $name
-     * @param string|null $phone
-     * @return UserResponseDTO
-     * @throws DvbApiException
-     */
+    // User methods
     public function createUser(string $email, ?string $name = null, ?string $phone = null): UserResponseDTO
     {
-        $query = ['email' => $email];
-        if ($name !== null) {
-            $query['name'] = $name;
-        }
-        if ($phone !== null) {
-            $query['phone'] = $phone;
-        }
-        $response = $this->post('user', [], $query);
-        return UserResponseDTO::fromArray($response);
+        return $this->userClient->createUser($email, $name, $phone);
     }
 
-    /**
-     * Get a user by their identifier (UID, email, phone, or wallet address).
-     *
-     * @param string $identifier
-     * @return UserResponseDTO
-     * @throws DvbApiException
-     */
     public function getUser(string $identifier): UserResponseDTO
     {
-        $response = $this->get("user/{$identifier}");
-        return UserResponseDTO::fromArray($response);
+        return $this->userClient->getUser($identifier);
     }
 
-    /**
-     * Get NFTs owned by a user.
-     *
-     * @param string $uid
-     * @param int $chainId
-     * @param string|null $collectionAddress
-     * @param string|null $cursor
-     * @return UserNftResponseDTO
-     * @throws DvbApiException
-     */
     public function getNftsByUser(string $uid, int $chainId, ?string $collectionAddress = null, ?string $cursor = null): UserNftResponseDTO
     {
-        $query = ['chain_id' => $chainId];
-        if ($collectionAddress !== null) {
-            $query['collection_address'] = $collectionAddress;
-        }
-        if ($cursor !== null) {
-            $query['cursor'] = $cursor;
-        }
-        $response = $this->get("user/{$uid}/nft", $query);
-        return UserNftResponseDTO::fromArray($response);
+        return $this->userClient->getNftsByUser($uid, $chainId, $collectionAddress, $cursor);
     }
 
-    /**
-     * Get user profile.
-     *
-     * @return \DVB\Core\SDK\DTOs\UserResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function getProfile(): UserResponseDTO
     {
-        $response = $this->get('profile');
-        return UserResponseDTO::fromArray($response);
+        return $this->userClient->getProfile();
     }
 
-    /**
-     * Query user by field and value.
-     *
-     * @param string $field
-     * @param string $value
-     * @return \DVB\Core\SDK\DTOs\UserResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function queryUser(string $field, string $value): UserResponseDTO
     {
-        $response = $this->post('query/user', [
-            'field' => $field,
-            'value' => $value,
-        ]);
-        return UserResponseDTO::fromArray($response);
+        return $this->userClient->queryUser($field, $value);
     }
 
-    /**
-     * Get user permissions.
-     *
-     * @return \DVB\Core\SDK\DTOs\PermissionsResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
+    // Permission methods
     public function getPermissions(): PermissionsResponseDTO
     {
-        $response = $this->get('permission');
-        return PermissionsResponseDTO::fromArray($response);
+        return $this->permissionClient->getPermissions();
     }
 
-    /**
-     * Check if user has specific permissions.
-     *
-     * @param array|string $permission
-     * @return \DVB\Core\SDK\DTOs\CheckPermissionResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function checkPermission(array|string $permission): CheckPermissionResponseDTO
     {
-        $response = $this->post('permission/check', [
-            'permission' => $permission,
-        ]);
-        return CheckPermissionResponseDTO::fromArray($response);
+        return $this->permissionClient->checkPermission($permission);
     }
 
-    /**
-     * Send email to user.
-     *
-     * @param string $email
-     * @param string $subject
-     * @param string $body
-     * @return \DVB\Core\SDK\DTOs\ApiResponse
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
+    // Communication methods
     public function sendEmail(string $email, string $subject, string $body): ApiResponse
     {
-        $response = $this->post('send-email', [
-            'email' => $email,
-            'subject' => $subject,
-            'body' => $body,
-        ]);
-        return ApiResponse::fromArray($response);
+        return $this->communicationClient->sendEmail($email, $subject, $body);
     }
 
-    /**
-     * Send SMS to user.
-     *
-     * @param string $phone
-     * @param string $body
-     * @return \DVB\Core\SDK\DTOs\ApiResponse
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function sendSms(string $phone, string $body): ApiResponse
     {
-        $response = $this->post('send-sms', [
-            'phone' => $phone,
-            'body' => $body,
-        ]);
-        return ApiResponse::fromArray($response);
+        return $this->communicationClient->sendSms($phone, $body);
     }
 
-    /**
-     * Get collections list.
-     *
-     * @param int $chainId
-     * @param string|null $cursor
-     * @return \DVB\Core\SDK\DTOs\CollectionListResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
+    // Collection methods
     public function getCollections(int $chainId, ?string $cursor = null): CollectionListResponseDTO
     {
-        $query = [
-            'chain_id' => $chainId,
-        ];
-        
-        if ($cursor) {
-            $query['cursor'] = $cursor;
-        }
-
-        $response = $this->get('collection', $query);
-        return CollectionListResponseDTO::fromArray($response);
+        return $this->collectionClient->getCollections($chainId, $cursor);
     }
 
-    /**
-     * Get owned collections list.
-     *
-     * @param int|null $chainId
-     * @param string|null $cursor
-     * @return \DVB\Core\SDK\DTOs\CollectionListResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function getOwnCollections(?int $chainId = null, ?string $cursor = null): CollectionListResponseDTO
     {
-        $query = [];
-        
-        if ($chainId !== null) {
-            $query['chain_id'] = $chainId;
-        }
-        
-        if ($cursor) {
-            $query['cursor'] = $cursor;
-        }
-
-        $response = $this->get('collection/own', $query);
-        return CollectionListResponseDTO::fromArray($response);
+        return $this->collectionClient->getOwnCollections($chainId, $cursor);
     }
 
-    /**
-     * Get collection events.
-     *
-     * @param string $address
-     * @param int $chainId
-     * @return \DVB\Core\SDK\DTOs\CollectionEventListResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function getCollectionEvents(string $address, int $chainId): CollectionEventListResponseDTO
     {
-        $response = $this->get("collection/{$address}/event", [
-            'chain_id' => $chainId,
-        ]);
-        return CollectionEventListResponseDTO::fromArray($response);
+        return $this->collectionClient->getCollectionEvents($address, $chainId);
     }
 
-    /**
-     * Check collection.
-     *
-     * @param int $chainId
-     * @param string $address
-     * @param string $toAddress
-     * @return \DVB\Core\SDK\DTOs\CheckCollectionResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function checkCollection(int $chainId, string $address, string $toAddress): CheckCollectionResponseDTO
     {
-        $response = $this->post('collection/check', [], [
-            'chain_id' => $chainId,
-            'address' => $address,
-            'to_address' => $toAddress,
-        ]);
-        return CheckCollectionResponseDTO::fromArray($response);
+        return $this->collectionClient->checkCollection($chainId, $address, $toAddress);
     }
 
-    /**
-     * Get NFTs by contract address.
-     *
-     * @param string $address
-     * @param int $chainId
-     * @param string|null $cursor
-     * @return \DVB\Core\SDK\DTOs\NftListResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
+    // NFT methods
     public function getNftsByContract(string $address, int $chainId, ?string $cursor = null): NftListResponseDTO
     {
-        $query = [
-            'chain_id' => $chainId,
-        ];
-        
-        if ($cursor) {
-            $query['cursor'] = $cursor;
-        }
-
-        $response = $this->get("nft/{$address}", $query);
-        return NftListResponseDTO::fromArray($response);
+        return $this->nftClient->getNftsByContract($address, $chainId, $cursor);
     }
 
-    /**
-     * Get NFT metadata.
-     *
-     * @param string $address
-     * @param string $tokenId
-     * @param int $chainId
-     * @return \DVB\Core\SDK\DTOs\NftMetadataResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function getNftMetadata(string $address, string $tokenId, int $chainId): NftMetadataResponseDTO
     {
-        $response = $this->get("nft/{$address}/{$tokenId}/metadata", [
-            'chain_id' => $chainId,
-        ]);
-        return NftMetadataResponseDTO::fromArray($response);
+        return $this->nftClient->getNftMetadata($address, $tokenId, $chainId);
     }
 
-    /**
-     * Get NFT job details.
-     *
-     * @param string $jobId
-     * @return \DVB\Core\SDK\DTOs\NftJobDetailsResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function getNftJobDetails(string $jobId): NftJobDetailsResponseDTO
     {
-        $response = $this->get("nft/details/{$jobId}");
-        return NftJobDetailsResponseDTO::fromArray($response);
+        return $this->nftClient->getNftJobDetails($jobId);
     }
 
-    /**
-     * Create NFT event.
-     *
-     * @param array $data
-     * @return \DVB\Core\SDK\DTOs\CheckCollectionResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function createNftEvent(array $data): CheckCollectionResponseDTO
     {
-        $response = $this->post('nft/event', $data);
-        return CheckCollectionResponseDTO::fromArray($response);
+        return $this->nftClient->createNftEvent($data);
     }
 
-    /**
-     * Get webhooks.
-     *
-     * @return \DVB\Core\SDK\DTOs\WebhookListResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
+    // Webhook methods
     public function getWebhooks(): WebhookListResponseDTO
     {
-        $response = $this->get('webhook');
-        return WebhookListResponseDTO::fromArray($response);
+        return $this->webhookClient->getWebhooks();
     }
 
-    /**
-     * Create webhook.
-     *
-     * @param string $url
-     * @param \DVB\Core\SDK\Enums\WebhookType $type
-     * @param string|null $name
-     * @param string|null $collectionAddress
-     * @param string|null $collectionChainId
-     * @return \DVB\Core\SDK\DTOs\WebhookListResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function createWebhook(string $url, WebhookType $type, ?string $name = null, ?string $collectionAddress = null, ?string $collectionChainId = null): WebhookListResponseDTO
     {
-        $data = [
-            'url' => $url,
-            'type' => $type->value,
-        ];
-
-        if ($name) {
-            $data['name'] = $name;
-        }
-
-        if ($collectionAddress) {
-            $data['collectionAddress'] = $collectionAddress;
-        }
-
-        if ($collectionChainId) {
-            $data['collectionChainId'] = $collectionChainId;
-        }
-        
-        // Validate that collection address and chain ID are provided for types that require them
-        if (in_array($type, [WebhookType::mint_nft, WebhookType::transfer_nft], true) && (empty($collectionAddress) || empty($collectionChainId))) {
-            throw new \InvalidArgumentException('Collection address and chain ID are required for this webhook type.');
-        }
-
-        $response = $this->post('webhook', $data);
-        return WebhookListResponseDTO::fromArray($response);
+        return $this->webhookClient->createWebhook($url, $type, $name, $collectionAddress, $collectionChainId);
     }
 
-    /**
-     * Get webhook by ID.
-     *
-     * @param string $id
-     * @return \DVB\Core\SDK\DTOs\WebhookDetailsResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function getWebhook(string $id): WebhookDetailsResponseDTO
     {
-        $response = $this->get("webhook/{$id}");
-        return WebhookDetailsResponseDTO::fromArray($response);
+        return $this->webhookClient->getWebhook($id);
     }
 
-    /**
-     * Delete webhook by ID.
-     *
-     * @param string $id
-     * @return \DVB\Core\SDK\DTOs\WebhookDetailsResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function deleteWebhook(string $id): WebhookDetailsResponseDTO
     {
-        $response = $this->delete("webhook/{$id}");
-        return WebhookDetailsResponseDTO::fromArray($response);
+        return $this->webhookClient->deleteWebhook($id);
     }
 
-    /**
-     * Create payment request.
-     *
-     * @param array $data
-     * @return \DVB\Core\SDK\DTOs\CreatePaymentResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
+    // Payment methods
     public function createPaymentRequest(array $data): CreatePaymentResponseDTO
     {
-        $response = $this->post('payment-requests', $data);
-        return CreatePaymentResponseDTO::fromArray($response);
+        return $this->paymentClient->createPaymentRequest($data);
     }
 
-    /**
-     * Get payment request by ID.
-     *
-     * @param string $id
-     * @return \DVB\Core\SDK\DTOs\PaymentDetailsResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function getPaymentRequest(string $id): PaymentDetailsResponseDTO
     {
-        $response = $this->get("payment-requests/{$id}");
-        return PaymentDetailsResponseDTO::fromArray($response);
+        return $this->paymentClient->getPaymentRequest($id);
     }
 
-    /**
-     * Get payment gateway by ID.
-     *
-     * @param string $id
-     * @return \DVB\Core\SDK\DTOs\PaymentGatewayResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function getPaymentGateway(string $id): PaymentGatewayResponseDTO
     {
-        $response = $this->get("payment-gateways/{$id}");
-        return PaymentGatewayResponseDTO::fromArray($response);
+        return $this->paymentClient->getPaymentGateway($id);
     }
 
-    /**
-     * Get payment methods.
-     *
-     * @return \DVB\Core\SDK\DTOs\PaymentMethodListResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function getPaymentMethods(): PaymentMethodListResponseDTO
     {
-        $response = $this->get('payment-method');
-        return PaymentMethodListResponseDTO::fromArray($response);
+        return $this->paymentClient->getPaymentMethods();
     }
 
-    /**
-     * Get networks.
-     *
-     * @return \DVB\Core\SDK\DTOs\NetworkListResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
+    // Network methods
     public function getNetworks(): NetworkListResponseDTO
     {
-        $response = $this->get('networks');
-        return NetworkListResponseDTO::fromArray($response);
+        return $this->networkClient->getNetworks();
     }
 
-    /**
-     * Get network detail.
-     *
-     * @param int $chainId
-     * @return \DVB\Core\SDK\DTOs\NetworkDetailResponseDTO
-     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
-     */
     public function getNetworkDetail(int $chainId): NetworkDetailResponseDTO
     {
-        $response = $this->post('network/detail', [
-            'chainId' => $chainId,
-        ]);
-        return NetworkDetailResponseDTO::fromArray($response);
+        return $this->networkClient->getNetworkDetail($chainId);
     }
 
-    /**
-     * Upload file to IPFS.
-     *
-     * @param resource $fileResource
-     * @param bool $toCdn
-     * @return IpfsUploadResponseDTO
-     * @throws DvbApiException
-     */
+    // IPFS methods
     public function uploadFileToIpfs($fileResource, bool $toCdn = true): IpfsUploadResponseDTO
     {
-        $response = $this->request('POST', 'ipfs/upload-file', [
-            'multipart' => [
-                [
-                    'name'     => 'file',
-                    'contents' => $fileResource,
-                ],
-                [
-                    'name'     => 'to_cdn',
-                    'contents' => $toCdn ? 'true' : 'false',
-                ],
-            ],
-        ]);
-        return IpfsUploadResponseDTO::fromArray($response);
+        return $this->ipfsClient->uploadFileToIpfs($fileResource, $toCdn);
     }
 
-    /**
-     * Upload folder to IPFS.
-     *
-     * @param array $files An array of file resources.
-     * @param bool $toCdn
-     * @return IpfsFolderUploadResponseDTO
-     * @throws DvbApiException
-     */
     public function uploadFolderToIpfs(array $files, bool $toCdn = true): IpfsFolderUploadResponseDTO
     {
-        $multipart = [];
-        foreach ($files as $file) {
-            $multipart[] = [
-                'name'     => 'files[]',
-                'contents' => $file,
-            ];
-        }
-
-        $multipart[] = [
-            'name'     => 'to_cdn',
-            'contents' => $toCdn ? 'true' : 'false',
-        ];
-
-        $response = $this->request('POST', 'ipfs/upload-files-to-folder', [
-            'multipart' => $multipart,
-        ]);
-        return IpfsFolderUploadResponseDTO::fromArray($response);
+        return $this->ipfsClient->uploadFolderToIpfs($files, $toCdn);
     }
 
-    /**
-     * Upload JSON to IPFS.
-     *
-     * @param array $jsonData
-     * @param bool $toCdn
-     * @return IpfsUploadResponseDTO
-     * @throws DvbApiException
-     */
     public function uploadJsonToIpfs(array $jsonData, bool $toCdn = true): IpfsUploadResponseDTO
     {
-        $response = $this->post('ipfs/upload-json', [
-            'json'   => $jsonData,
-            'to_cdn' => $toCdn,
-        ]);
-        return IpfsUploadResponseDTO::fromArray($response);
+        return $this->ipfsClient->uploadJsonToIpfs($jsonData, $toCdn);
     }
 
-    /**
-     * Get IPFS stats.
-     *
-     * @return IpfsStatsResponseDTO
-     * @throws DvbApiException
-     */
     public function getIpfsStats(): IpfsStatsResponseDTO
     {
-        $response = $this->get('ipfs/upload-stats');
-        return IpfsStatsResponseDTO::fromArray($response);
+        return $this->ipfsClient->getIpfsStats();
     }
 
     /**

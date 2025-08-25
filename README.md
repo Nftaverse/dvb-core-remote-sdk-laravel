@@ -22,8 +22,8 @@ Add your DVB API credentials to your `config/services.php` file:
 
 ```php
 'dvb' => [
-    'key' => env('DVB_API_KEY'),
-    'domain' => env('DVB_API_DOMAIN', 'https://sandbox.digitalvisionbrands.com'),
+    'api_key' => env('DVB_API_KEY'),
+    'domain' => env('DVB_API_DOMAIN', 'https://dev-epoch.nft-investment.io'),
     'protocol' => env('DVB_API_PROTOCOL', 'https'),
 ],
 ```
@@ -32,7 +32,7 @@ Then add the environment variables to your `.env` file:
 
 ```env
 DVB_API_KEY=your_api_key_here
-DVB_API_DOMAIN=sandbox.digitalvisionbrands.com
+DVB_API_DOMAIN=dev-epoch.nft-investment.io
 DVB_API_PROTOCOL=https
 ```
 
@@ -47,12 +47,12 @@ use DVB\Core\SDK\DvbApiClient;
 $client = app(DvbApiClient::class);
 
 // Or, create a new client instance manually
-$client = DvbApiClient::newClient('your_api_key', 'sandbox.digitalvisionbrands.com');
+$client = DvbApiClient::newClient('your_api_key', 'dev-epoch.nft-investment.io');
 
 // You can also set the credentials after instantiation
 $client = new DvbApiClient();
 $client->setApiKey('your_api_key')
-       ->setBaseDomain('sandbox.digitalvisionbrands.com');
+       ->setBaseDomain('dev-epoch.nft-investment.io');
 
 // Get user profile
 $profile = $client->getProfile();

@@ -8,3 +8,5 @@
 /CLAUDE.local.md
 
 .shrimp/
+/.env
+/.env.testing

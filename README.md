@@ -214,7 +214,3 @@ To run the tests:
 ```bash
 composer test
 ```
-
-## License
-
-The MIT License (MIT). Please see [License File](LICENSE) for more information.

@@ -1111,4 +1111,5 @@ class DvbApiClientTest extends TestCase
         // Act
         $client->getProfile();
     }
+
 }

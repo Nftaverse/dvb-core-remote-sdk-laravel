@@ -9,18 +9,6 @@ abstract class IntegrationTestCase extends BaseTestCase
 {
     protected DvbApiClient $client;
 
-    /**
-     * Set up the test case.
-     *
-     * @return void
-     */
-    protected function getPackageProviders($app)
-    {
-        return [
-            \DVB\Core\SDK\DvbServiceProvider::class,
-        ];
-    }
-
     protected function setUp(): void
     {
         parent::setUp();

@@ -8,6 +8,8 @@ class UserDTO
     public string $name;
     public ?string $email;
     public ?string $avatar;
+    public ?int $credit_web_three;
+    public ?int $credit_otp;
     /** @var WalletDTO[]|null */
     public ?array $wallet;
 
@@ -19,12 +21,16 @@ class UserDTO
         string $name,
         ?string $email,
         ?string $avatar = null,
+        ?int $credit_web_three = null,
+        ?int $credit_otp = null,
         ?array $wallet = null
     ) {
         $this->uid = $uid;
         $this->name = $name;
         $this->email = $email;
         $this->avatar = $avatar;
+        $this->credit_web_three = $credit_web_three;
+        $this->credit_otp = $credit_otp;
         $this->wallet = $wallet;
     }
 
@@ -39,6 +45,8 @@ class UserDTO
             $data['name'] ?? '',
             $data['email'] ?? null,
             $data['avatar'] ?? null,
+            $data['credit_web_three'] ?? null,
+            $data['credit_otp'] ?? null,
             $wallet,
         );
     }

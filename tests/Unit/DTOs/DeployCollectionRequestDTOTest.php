@@ -78,7 +78,7 @@ class DeployCollectionRequestDTOTest extends TestCase
     {
         // Assert
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Image resource is required and must be a valid resource');
+        $this->expectExceptionMessage('Either image resource or image URL must be provided');
         
         // Act
         new DeployCollectionRequestDTO(
@@ -96,7 +96,7 @@ class DeployCollectionRequestDTOTest extends TestCase
     {
         // Assert
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Image resource is required and must be a valid resource');
+        $this->expectExceptionMessage('Image resource must be a valid resource');
         
         // Act
         new DeployCollectionRequestDTO(
@@ -152,8 +152,8 @@ class DeployCollectionRequestDTOTest extends TestCase
             'owner_address' => '0xowner',
             'name' => 'Test Collection',
             'quantity' => 100,
-            'enable_flexible_mint' => true,
-            'enable_soulbound' => false,
+            'enable_flexible_mint' => '1',
+            'enable_soulbound' => '0',
             'description' => 'Test Description',
             'symbol' => 'TEST',
             'image_url' => 'https://example.com/image.jpg',
@@ -161,12 +161,12 @@ class DeployCollectionRequestDTOTest extends TestCase
             'contract_base_url' => 'https://example.com/base',
             'team' => '[{"name":"Test Team"}]',
             'roadmap' => '[{"phase":"Phase 1"}]',
-            'enable_owner_signature' => true,
+            'enable_owner_signature' => '1',
             'royalty' => 5,
             'receive_royalty_address' => '0xroyalty',
-            'enable_parent_contract' => true,
+            'enable_parent_contract' => '1',
             'parent_contract_address' => '0xparent',
-            'enable_blind' => true,
+            'enable_blind' => '1',
             'blind_name' => 'Blind Collection',
             'blind_description' => 'Blind Description',
             'blind_metadata_base_uri' => 'https://example.com/blind',
@@ -201,8 +201,8 @@ class DeployCollectionRequestDTOTest extends TestCase
             'owner_address' => '0xowner',
             'name' => 'Test Collection',
             'quantity' => 100,
-            'enable_flexible_mint' => true,
-            'enable_soulbound' => false,
+            'enable_flexible_mint' => '1',
+            'enable_soulbound' => '0',
         ], $array);
         
         // Clean up

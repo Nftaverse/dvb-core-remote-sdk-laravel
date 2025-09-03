@@ -86,7 +86,7 @@ class DeployCollectionRequestDTO
         int $quantity,
         bool $enableFlexibleMint,
         bool $enableSoulbound,
-        $imageResource,
+        $imageResource = null,
         ?string $description = null,
         ?string $symbol = null,
         ?string $imageUrl = null,
@@ -106,9 +106,14 @@ class DeployCollectionRequestDTO
         $blindImageResource = null,
         ?string $blindImageUrl = null
     ) {
-        // 驗證圖片資源
-        if (!is_resource($imageResource)) {
-            throw new \InvalidArgumentException('Image resource is required and must be a valid resource');
+        // 驗證圖片資源（如果提供了圖片資源）
+        if ($imageResource !== null && !is_resource($imageResource)) {
+            throw new \InvalidArgumentException('Image resource must be a valid resource');
+        }
+        
+        // 驗證 image 或 image_url 必須有其中一個
+        if ($imageResource === null && $imageUrl === null) {
+            throw new \InvalidArgumentException('Either image resource or image URL must be provided');
         }
         
         $this->chainId = $chainId;
@@ -145,8 +150,8 @@ class DeployCollectionRequestDTO
             'owner_address' => $this->ownerAddress,
             'name' => $this->name,
             'quantity' => $this->quantity,
-            'enable_flexible_mint' => $this->enableFlexibleMint,
-            'enable_soulbound' => $this->enableSoulbound,
+            'enable_flexible_mint' => $this->enableFlexibleMint ? '1' : '0',
+            'enable_soulbound' => $this->enableSoulbound ? '1' : '0',
         ];
 
         if ($this->description !== null) {
@@ -178,7 +183,7 @@ class DeployCollectionRequestDTO
         }
         
         if ($this->enableOwnerSignature !== null) {
-            $data['enable_owner_signature'] = $this->enableOwnerSignature;
+            $data['enable_owner_signature'] = $this->enableOwnerSignature ? '1' : '0';
         }
         
         if ($this->royalty !== null) {
@@ -190,7 +195,7 @@ class DeployCollectionRequestDTO
         }
         
         if ($this->enableParentContract !== null) {
-            $data['enable_parent_contract'] = $this->enableParentContract;
+            $data['enable_parent_contract'] = $this->enableParentContract ? '1' : '0';
         }
         
         if ($this->parentContractAddress !== null) {
@@ -198,7 +203,7 @@ class DeployCollectionRequestDTO
         }
         
         if ($this->enableBlind !== null) {
-            $data['enable_blind'] = $this->enableBlind;
+            $data['enable_blind'] = $this->enableBlind ? '1' : '0';
         }
         
         if ($this->blindName !== null) {

@@ -103,37 +103,79 @@ class CollectionClient extends DvbBaseClient
      */
     public function deployCollection(DeployCollectionRequestDTO $request): DeployCollectionResponseDTO
     {
-        // 使用 multipart 格式上傳圖片和數據
-        $data = $request->toArray();
-        $multipart = [];
-        
-        // 添加所有表單數據
-        foreach ($data as $key => $value) {
-            $multipart[] = [
-                'name' => $key,
-                'contents' => $value
-            ];
+        // 檢查是否有圖片資源
+        if ($request->hasImage() || $request->hasBlindImage()) {
+            // 使用 multipart 格式上傳圖片和數據
+            $data = $request->toArray();
+            $multipart = [];
+            
+            // 添加所有字段
+            foreach ($data as $key => $value) {
+                $multipart[] = [
+                    'name' => $key,
+                    'contents' => $value
+                ];
+            }
+            
+            // 如果有圖片資源，替換對應的字段
+            if ($request->hasImage()) {
+                // 移除 image_url 字段（如果存在）
+                $multipart = array_filter($multipart, function($item) {
+                    return $item['name'] !== 'image_url';
+                });
+                
+                // 添加圖片資源
+                $multipart[] = [
+                    'name' => 'image',
+                    'contents' => $request->getImageResource()
+                ];
+            }
+            
+            // 如果有盲盒圖片資源，替換對應的字段
+            if ($request->hasBlindImage()) {
+                // 移除 blind_image_url 字段（如果存在）
+                $multipart = array_filter($multipart, function($item) {
+                    return $item['name'] !== 'blind_image_url';
+                });
+                
+                // 添加盲盒圖片資源
+                $multipart[] = [
+                    'name' => 'blind_image',
+                    'contents' => $request->getBlindImageResource()
+                ];
+            }
+            
+            // 重新索引數組
+            $multipart = array_values($multipart);
+            
+            // 調試輸出
+            echo "Multipart data:\n";
+            foreach ($multipart as $item) {
+                echo "  - {$item['name']}: " . (is_resource($item['contents']) ? '[RESOURCE]' : $item['contents']) . "\n";
+            }
+            
+            $response = $this->request('POST', 'collection', [
+                'multipart' => $multipart
+            ]);
+        } else {
+            // 如果沒有圖片資源，使用 form_params
+            $data = $request->toArray();
+            
+            // 調試輸出
+            echo "Form params data:\n";
+            foreach ($data as $key => $value) {
+                echo "  - {$key}: " . (is_resource($value) ? '[RESOURCE]' : $value) . "\n";
+            }
+            
+            // 再次檢查布爾值是否正確轉換
+            foreach ($data as $key => $value) {
+                if (is_bool($value)) {
+                    echo "WARNING: Boolean value found in form data: {$key} = " . ($value ? 'true' : 'false') . "\n";
+                }
+            }
+            
+            $response = $this->postFormData('collection', $data);
         }
-        
-        // 添加主圖片資源
-        if ($request->hasImage()) {
-            $multipart[] = [
-                'name' => 'image',
-                'contents' => $request->getImageResource()
-            ];
-        }
-        
-        // 添加盲盒圖片資源
-        if ($request->hasBlindImage()) {
-            $multipart[] = [
-                'name' => 'blind_image',
-                'contents' => $request->getBlindImageResource()
-            ];
-        }
-        
-        $response = $this->request('POST', 'collection', [
-            'multipart' => $multipart
-        ]);
         
         return DeployCollectionResponseDTO::fromArray($response);
     }

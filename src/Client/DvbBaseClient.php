@@ -122,6 +122,31 @@ class DvbBaseClient
     }
 
     /**
+     * Make a POST request with form data to the API.
+     *
+     * @param string $endpoint
+     * @param array $formData
+     * @param array $query
+     * @return array
+     * @throws DvbApiException
+     */
+    protected function postFormData(string $endpoint, array $formData = [], array $query = []): array
+    {
+        // 確保布爾值被轉換為字符串
+        foreach ($formData as $key => $value) {
+            if (is_bool($value)) {
+                $formData[$key] = $value ? '1' : '0';
+            }
+        }
+        
+        $options = ['form_params' => $formData];
+        if (!empty($query)) {
+            $options['query'] = $query;
+        }
+        return $this->request('POST', $endpoint, $options);
+    }
+
+    /**
      * Make a PUT request to the API.
      *
      * @param string $endpoint
@@ -168,8 +193,16 @@ class DvbBaseClient
                 'Authorization' => 'Bearer ' . $this->apiKey,
             ];
 
+            // 設置適當的 Content-Type
             if (!isset($options['headers']['Content-Type'])) {
-                $headers['Content-Type'] = 'application/json';
+                if (isset($options['form_params'])) {
+                    $headers['Content-Type'] = 'application/x-www-form-urlencoded';
+                } else if (isset($options['multipart'])) {
+                    // 對於 multipart 請求，讓 Guzzle 自動設置 Content-Type
+                    // 不要手動設置，因為 Guzzle 會添加 boundary 參數
+                } else {
+                    $headers['Content-Type'] = 'application/json';
+                }
             }
 
             // Merge headers with existing options

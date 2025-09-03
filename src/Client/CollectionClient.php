@@ -5,6 +5,11 @@ namespace DVB\Core\SDK\Client;
 use DVB\Core\SDK\DTOs\CollectionListResponseDTO;
 use DVB\Core\SDK\DTOs\CollectionEventListResponseDTO;
 use DVB\Core\SDK\DTOs\CheckCollectionResponseDTO;
+use DVB\Core\SDK\DTOs\DeployCollectionRequestDTO;
+use DVB\Core\SDK\DTOs\DeployCollectionResponseDTO;
+use DVB\Core\SDK\DTOs\CollectionDetailResponseDTO;
+use DVB\Core\SDK\DTOs\MintNftRequestDTO;
+use DVB\Core\SDK\DTOs\MintNftResponseDTO;
 
 class CollectionClient extends DvbBaseClient
 {
@@ -87,5 +92,47 @@ class CollectionClient extends DvbBaseClient
             'to_address' => $toAddress,
         ]);
         return CheckCollectionResponseDTO::fromArray($response);
+    }
+
+    /**
+     * Deploy a new collection.
+     *
+     * @param \DVB\Core\SDK\DTOs\DeployCollectionRequestDTO $request
+     * @return \DVB\Core\SDK\DTOs\DeployCollectionResponseDTO
+     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
+     */
+    public function deployCollection(DeployCollectionRequestDTO $request): DeployCollectionResponseDTO
+    {
+        $response = $this->post('collection', [], $request->toArray());
+        return DeployCollectionResponseDTO::fromArray($response);
+    }
+
+    /**
+     * Get collection details.
+     *
+     * @param string $address
+     * @param int $chainId
+     * @return \DVB\Core\SDK\DTOs\CollectionDetailResponseDTO
+     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
+     */
+    public function getCollectionDetails(string $address, int $chainId): CollectionDetailResponseDTO
+    {
+        $response = $this->get("collection/{$address}", [
+            'chain_id' => $chainId,
+        ]);
+        return CollectionDetailResponseDTO::fromArray($response);
+    }
+
+    /**
+     * Mint NFT in collection.
+     *
+     * @param \DVB\Core\SDK\DTOs\MintNftRequestDTO $request
+     * @return \DVB\Core\SDK\DTOs\MintNftResponseDTO
+     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
+     */
+    public function mintNft(MintNftRequestDTO $request): MintNftResponseDTO
+    {
+        $response = $this->post('collection/mint-nft', [], $request->toArray());
+        return MintNftResponseDTO::fromArray($response);
     }
 }

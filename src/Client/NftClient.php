@@ -6,6 +6,9 @@ use DVB\Core\SDK\DTOs\NftListResponseDTO;
 use DVB\Core\SDK\DTOs\NftMetadataResponseDTO;
 use DVB\Core\SDK\DTOs\NftJobDetailsResponseDTO;
 use DVB\Core\SDK\DTOs\CheckCollectionResponseDTO;
+use DVB\Core\SDK\DTOs\NftDetailResponseDTO;
+use DVB\Core\SDK\DTOs\TransferNftRequestDTO;
+use DVB\Core\SDK\DTOs\TransferNftResponseDTO;
 
 class NftClient extends DvbBaseClient
 {
@@ -73,5 +76,37 @@ class NftClient extends DvbBaseClient
     {
         $response = $this->post('nft/event', $data);
         return CheckCollectionResponseDTO::fromArray($response);
+    }
+
+    /**
+     * Get NFT detail by contract address and token ID.
+     *
+     * @param string $address
+     * @param string $tokenId
+     * @param int $chainId
+     * @return \DVB\Core\SDK\DTOs\NftDetailResponseDTO
+     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
+     */
+    public function getNftDetail(string $address, string $tokenId, int $chainId): NftDetailResponseDTO
+    {
+        $response = $this->get("nft/{$address}/{$tokenId}", [
+            'chain_id' => $chainId,
+        ]);
+        return NftDetailResponseDTO::fromArray($response);
+    }
+
+    /**
+     * Transfer NFT ownership.
+     *
+     * @param string $address
+     * @param string $tokenId
+     * @param \DVB\Core\SDK\DTOs\TransferNftRequestDTO $request
+     * @return \DVB\Core\SDK\DTOs\TransferNftResponseDTO
+     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
+     */
+    public function transferNft(string $address, string $tokenId, TransferNftRequestDTO $request): TransferNftResponseDTO
+    {
+        $response = $this->post("nft/{$address}/{$tokenId}/transfer", $request->toArray());
+        return TransferNftResponseDTO::fromArray($response);
     }
 }

@@ -76,14 +76,48 @@ $events = $client->getCollectionEvents('0xcontract_address', 1);
 // Check collection
 $collectionCheck = $client->checkCollection(1, '0xcontract_address', '0xuser_address');
 
+// Deploy a new collection
+$deployRequest = new DeployCollectionRequestDTO(
+    chainId: 1,
+    ownerAddress: '0xowner_address',
+    name: 'My Collection',
+    quantity: 100,
+    enableFlexibleMint: true,
+    enableSoulbound: false
+);
+$deployedCollection = $client->deployCollection($deployRequest);
+
+// Get collection details
+$collectionDetails = $client->getCollectionDetails('0xcontract_address', 1);
+
+// Mint NFT in collection
+$mintRequest = new MintNftRequestDTO(
+    chainId: 1,
+    address: '0xcontract_address',
+    toAddress: '0xrecipient_address',
+    amount: 1,
+    reference: 'mint-ref-001'
+);
+$mintResult = $client->mintNft($mintRequest);
+
 // Get NFTs by contract with pagination
 $nfts = $client->getNftsByContract('0xcontract_address', 1);
 
 // Get NFT metadata
 $metadata = $client->getNftMetadata('0xcontract_address', '1', 1);
 
+// Get NFT detail
+$nftDetail = $client->getNftDetail('0xcontract_address', '1', 1);
+
 // Get NFT job details
 $jobDetails = $client->getNftJobDetails('job_id');
+
+// Transfer NFT ownership
+$transferRequest = new TransferNftRequestDTO(
+    chainId: 1,
+    toAddress: '0xnew_owner_address'
+);
+$transferResult = $client->transferNft('0xcontract_address', '1', $transferRequest);
 
 // Create NFT event
 $event = $client->createNftEvent([

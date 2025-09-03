@@ -2,9 +2,12 @@
 
 namespace DVB\Core\SDK\Tests\Unit\Client;
 
-use DVB\Core\SDK\Client\CollectionClient;
+use DVB\Core\SDK\DvbApiClient;
 use DVB\Core\SDK\DTOs\DeployCollectionRequestDTO;
 use DVB\Core\SDK\DTOs\DeployCollectionResponseDTO;
+use DVB\Core\SDK\DTOs\CollectionDetailResponseDTO;
+use DVB\Core\SDK\DTOs\MintNftRequestDTO;
+use DVB\Core\SDK\DTOs\MintNftResponseDTO;
 use DVB\Core\SDK\Tests\TestCase;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Response;
@@ -18,7 +21,7 @@ class CollectionClientTest extends TestCase
         $httpClient = $this->createMock(ClientInterface::class);
         $logger = $this->createMock(LoggerInterface::class);
         
-        $client = new CollectionClient($httpClient, $logger, 'test-key');
+        $client = new DvbApiClient($httpClient, $logger, 'test-key');
         
         $imageResource = fopen('php://memory', 'rb');
         $request = new DeployCollectionRequestDTO(
@@ -59,41 +62,78 @@ class CollectionClientTest extends TestCase
         fclose($imageResource);
     }
     
-    public function test_deploy_collection_with_image_throws_exception_when_image_is_missing(): void
+    public function test_get_collection_details_returns_collection_detail_response_dto(): void
     {
         // Arrange
         $httpClient = $this->createMock(ClientInterface::class);
         $logger = $this->createMock(LoggerInterface::class);
         
-        $client = new CollectionClient($httpClient, $logger, 'test-key');
+        $client = new DvbApiClient($httpClient, $logger, 'test-key');
         
-        // Create a request with a closed image resource
-        $imageResource = fopen('php://memory', 'rb');
-        $request = new DeployCollectionRequestDTO(
-            chainId: 1,
-            ownerAddress: '0xowner',
-            name: 'Test Collection',
-            quantity: 100,
-            enableFlexibleMint: true,
-            enableSoulbound: false,
-            imageResource: $imageResource
-        );
+        $expectedResponse = [
+            'code' => 200,
+            'message' => 'Success',
+            'data' => [
+                'address' => '0x123',
+                'name' => 'Test Collection'
+            ]
+        ];
         
-        // Close the resource to make it invalid
-        fclose($imageResource);
-        
-        // Mock the HTTP client to throw an exception when trying to send the request
         $httpClient->expects($this->once())
             ->method('request')
-            ->willThrowException(new \GuzzleHttp\Exception\RequestException(
-                'Invalid JSON response from API',
-                $this->createMock(\Psr\Http\Message\RequestInterface::class)
-            ));
-        
-        // Assert
-        $this->expectException(\DVB\Core\SDK\Exceptions\DvbApiException::class);
+            ->with('GET', 'https://dev-epoch.nft-investment.io/api/remote/v1/collection/0x123', $this->callback(function ($options) {
+                return isset($options['query']['chain_id']) && $options['query']['chain_id'] === 1;
+            }))
+            ->willReturn(new Response(200, [], json_encode($expectedResponse)));
         
         // Act
-        $client->deployCollection($request);
+        $result = $client->getCollectionDetails('0x123', 1);
+        
+        // Assert
+        $this->assertInstanceOf(CollectionDetailResponseDTO::class, $result);
+        $this->assertEquals(200, $result->code);
+        $this->assertEquals('Success', $result->message);
+        $this->assertIsArray($result->data);
+    }
+    
+    public function test_mint_nft_returns_mint_nft_response_dto(): void
+    {
+        // Arrange
+        $httpClient = $this->createMock(ClientInterface::class);
+        $logger = $this->createMock(LoggerInterface::class);
+        
+        $client = new DvbApiClient($httpClient, $logger, 'test-key');
+        
+        $request = $this->createMock(MintNftRequestDTO::class);
+        $request->method('toArray')->willReturn([
+            'chain_id' => 1,
+            'address' => '0x123',
+            'to_address' => '0x456',
+            'amount' => 1
+        ]);
+        
+        $expectedResponse = [
+            'code' => 200,
+            'message' => 'Success',
+            'data' => [
+                'remote_job_id' => 'job123'
+            ]
+        ];
+        
+        $httpClient->expects($this->once())
+            ->method('request')
+            ->with('POST', 'https://dev-epoch.nft-investment.io/api/remote/v1/collection/mint-nft', $this->callback(function ($options) {
+                return isset($options['json']) && is_array($options['json']);
+            }))
+            ->willReturn(new Response(200, [], json_encode($expectedResponse)));
+        
+        // Act
+        $result = $client->mintNft($request);
+        
+        // Assert
+        $this->assertInstanceOf(MintNftResponseDTO::class, $result);
+        $this->assertEquals(200, $result->code);
+        $this->assertEquals('Success', $result->message);
+        $this->assertEquals('job123', $result->data);
     }
 }

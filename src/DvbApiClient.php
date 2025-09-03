@@ -18,6 +18,11 @@ use DVB\Core\SDK\DTOs\CheckPermissionResponseDTO;
 use DVB\Core\SDK\DTOs\ApiResponse;
 use DVB\Core\SDK\DTOs\CollectionEventListResponseDTO;
 use DVB\Core\SDK\DTOs\CheckCollectionResponseDTO;
+use DVB\Core\SDK\DTOs\DeployCollectionRequestDTO;
+use DVB\Core\SDK\DTOs\DeployCollectionResponseDTO;
+use DVB\Core\SDK\DTOs\CollectionDetailResponseDTO;
+use DVB\Core\SDK\DTOs\MintNftRequestDTO;
+use DVB\Core\SDK\DTOs\MintNftResponseDTO;
 use DVB\Core\SDK\DTOs\NftListResponseDTO;
 use DVB\Core\SDK\DTOs\NftMetadataResponseDTO;
 use DVB\Core\SDK\DTOs\NftJobDetailsResponseDTO;
@@ -256,6 +261,21 @@ class DvbApiClient extends DvbBaseClient
     public function checkCollection(int $chainId, string $address, string $toAddress): CheckCollectionResponseDTO
     {
         return $this->collectionClient->checkCollection($chainId, $address, $toAddress);
+    }
+
+    public function deployCollection(DeployCollectionRequestDTO $request): DeployCollectionResponseDTO
+    {
+        return $this->collectionClient->deployCollection($request);
+    }
+
+    public function getCollectionDetails(string $address, int $chainId): CollectionDetailResponseDTO
+    {
+        return $this->collectionClient->getCollectionDetails($address, $chainId);
+    }
+
+    public function mintNft(MintNftRequestDTO $request): MintNftResponseDTO
+    {
+        return $this->collectionClient->mintNft($request);
     }
 
     // NFT methods

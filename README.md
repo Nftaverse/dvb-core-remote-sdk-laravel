@@ -76,16 +76,8 @@ $events = $client->getCollectionEvents('0xcontract_address', 1);
 // Check collection
 $collectionCheck = $client->checkCollection(1, '0xcontract_address', '0xuser_address');
 
-// Deploy a new collection
-$deployRequest = new DeployCollectionRequestDTO(
-    chainId: 1,
-    ownerAddress: '0xowner_address',
-    name: 'My Collection',
-    quantity: 100,
-    enableFlexibleMint: true,
-    enableSoulbound: false
-);
-$deployedCollection = $client->deployCollection($deployRequest);
+// Get collection details
+$collectionDetails = $client->getCollectionDetails('0xcontract_address', 1);
 
 // Deploy a new collection (image is now required)
 $imageResource = fopen('/path/to/image.png', 'r');
@@ -96,12 +88,39 @@ $deployRequest = new DeployCollectionRequestDTO(
     quantity: 100,
     enableFlexibleMint: true,
     enableSoulbound: false,
-    imageResource: $imageResource // Image is now a required parameter
+    imageResource: $imageResource, // Image is now a required parameter
+    description: 'My collection description',
+    symbol: 'MC',
+    imageUrl: 'https://example.com/image.jpg',
+    contractMetadataUrl: 'https://example.com/metadata',
+    contractBaseUrl: 'https://example.com/base',
+    team: [['name' => 'Team Member 1'], ['name' => 'Team Member 2']],
+    roadmap: [['phase' => 'Phase 1', 'description' => 'Initial release']],
+    enableOwnerSignature: true,
+    royalty: 5,
+    receiveRoyaltyAddress: '0xroyalty_address',
+    enableParentContract: false,
+    enableBlind: true,
+    blindName: 'Blind Collection',
+    blindDescription: 'Blind collection description',
+    blindMetadataBaseUri: 'https://example.com/blind',
+    // For blind image: blindImageResource: $blindImageResource,
+    blindImageUrl: 'https://example.com/blind.jpg'
 );
 $deployedCollection = $client->deployCollection($deployRequest);
 
 // Don't forget to close the file resource when done
 fclose($imageResource);
+
+// Mint NFT in collection
+$mintRequest = new MintNftRequestDTO(
+    chainId: 1,
+    address: '0xcontract_address',
+    toAddress: '0xrecipient_address',
+    amount: 1,
+    reference: 'mint-ref-001'
+);
+$mintResult = $client->mintNft($mintRequest);
 
 // Get collection details
 $collectionDetails = $client->getCollectionDetails('0xcontract_address', 1);

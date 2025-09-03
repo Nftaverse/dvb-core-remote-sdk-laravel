@@ -40,11 +40,11 @@ class DeployCollectionRequestDTO
     /** @var string|null */
     public ?string $contractBaseUrl;
     
-    /** @var array|null */
-    public ?array $team;
+    /** @var string|null */
+    public ?string $team;
     
-    /** @var array|null */
-    public ?array $roadmap;
+    /** @var string|null */
+    public ?string $roadmap;
     
     /** @var bool|null */
     public ?bool $enableOwnerSignature;
@@ -106,6 +106,23 @@ class DeployCollectionRequestDTO
         $blindImageResource = null,
         ?string $blindImageUrl = null
     ) {
+        // 驗證必填字段
+        if (empty($chainId)) {
+            throw new \InvalidArgumentException('Chain ID is required');
+        }
+        
+        if (empty($ownerAddress)) {
+            throw new \InvalidArgumentException('Owner address is required');
+        }
+        
+        if (empty($name)) {
+            throw new \InvalidArgumentException('Name is required');
+        }
+        
+        if ($quantity < 0) {
+            throw new \InvalidArgumentException('Quantity must be greater than or equal to 0');
+        }
+        
         // 驗證圖片資源（如果提供了圖片資源）
         if ($imageResource !== null && !is_resource($imageResource)) {
             throw new \InvalidArgumentException('Image resource must be a valid resource');

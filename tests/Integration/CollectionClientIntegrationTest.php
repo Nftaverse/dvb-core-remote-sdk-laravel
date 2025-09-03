@@ -19,9 +19,13 @@ class CollectionClientIntegrationTest extends IntegrationTestCase
         file_put_contents($tempFile, $imageData);
         $imageResource = fopen($tempFile, 'rb');
 
+        // 獲取支持的網絡列表
+        $networksResponse = $this->getClient()->getNetworks();
+        $chainId = $networksResponse->data[0]->chain_id ?? 1; // 默認使用 1 (Ethereum mainnet)
+
         // 創建 DeployCollectionRequestDTO
         $request = new DeployCollectionRequestDTO(
-            chainId: 1, // Ethereum mainnet
+            chainId: $chainId,
             ownerAddress: '0x1234567890123456789012345678901234567890', // 測試地址
             name: 'Test Collection ' . time(), // 添加時間戳以避免重複名稱
             quantity: 100,

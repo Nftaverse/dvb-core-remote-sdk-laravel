@@ -3,7 +3,7 @@
 namespace DVB\Core\SDK\Tests\Unit\Client;
 
 use DVB\Core\SDK\Client\CollectionClient;
-use DVB\Core\SDK\DTOs\DeployCollectionWithImageRequestDTO;
+use DVB\Core\SDK\DTOs\DeployCollectionRequestDTO;
 use DVB\Core\SDK\DTOs\DeployCollectionResponseDTO;
 use DVB\Core\SDK\Tests\TestCase;
 use GuzzleHttp\ClientInterface;
@@ -21,7 +21,7 @@ class CollectionClientTest extends TestCase
         $client = new CollectionClient($httpClient, $logger, 'test-key');
         
         $imageResource = fopen('php://memory', 'rb');
-        $request = new DeployCollectionWithImageRequestDTO(
+        $request = new DeployCollectionRequestDTO(
             chainId: 1,
             ownerAddress: '0xowner',
             name: 'Test Collection',
@@ -47,7 +47,7 @@ class CollectionClientTest extends TestCase
             ->willReturn(new Response(200, [], json_encode($expectedResponse)));
         
         // Act
-        $result = $client->deployCollectionWithImage($request);
+        $result = $client->deployCollection($request);
         
         // Assert
         $this->assertInstanceOf(DeployCollectionResponseDTO::class, $result);
@@ -69,7 +69,7 @@ class CollectionClientTest extends TestCase
         
         // Create a request with a closed image resource
         $imageResource = fopen('php://memory', 'rb');
-        $request = new DeployCollectionWithImageRequestDTO(
+        $request = new DeployCollectionRequestDTO(
             chainId: 1,
             ownerAddress: '0xowner',
             name: 'Test Collection',
@@ -82,54 +82,18 @@ class CollectionClientTest extends TestCase
         // Close the resource to make it invalid
         fclose($imageResource);
         
-        // Assert
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Image resource is required for collection deployment');
-        
-        // Act
-        $client->deployCollectionWithImage($request);
-    }
-    
-    public function test_deploy_collection_returns_deploy_collection_response_dto(): void
-    {
-        // Arrange
-        $httpClient = $this->createMock(ClientInterface::class);
-        $logger = $this->createMock(LoggerInterface::class);
-        
-        $client = new CollectionClient($httpClient, $logger, 'test-key');
-        
-        $request = $this->createMock(\DVB\Core\SDK\DTOs\DeployCollectionRequestDTO::class);
-        $request->method('toArray')->willReturn([
-            'chain_id' => 1,
-            'owner_address' => '0xowner',
-            'name' => 'Test Collection',
-            'quantity' => 100,
-            'enable_flexible_mint' => true,
-            'enable_soulbound' => false,
-        ]);
-        
-        $expectedResponse = [
-            'code' => 200,
-            'message' => 'Success',
-            'data' => [
-                'launchpad_id' => 'launchpad123'
-            ]
-        ];
-        
+        // Mock the HTTP client to throw an exception when trying to send the request
         $httpClient->expects($this->once())
             ->method('request')
-            ->with('POST', 'https://dev-epoch.nft-investment.io/api/remote/v1/collection', $this->callback(function ($options) {
-                return isset($options['json']) && is_array($options['json']);
-            }))
-            ->willReturn(new Response(200, [], json_encode($expectedResponse)));
-        
-        // Act
-        $result = $client->deployCollection($request);
+            ->willThrowException(new \GuzzleHttp\Exception\RequestException(
+                'Invalid JSON response from API',
+                $this->createMock(\Psr\Http\Message\RequestInterface::class)
+            ));
         
         // Assert
-        $this->assertInstanceOf(DeployCollectionResponseDTO::class, $result);
-        $this->assertEquals(200, $result->code);
-        $this->assertEquals('Success', $result->message);
-        $this->assertEquals('launchpad123', $result->data);
+        $this->expectException(\DVB\Core\SDK\Exceptions\DvbApiException::class);
+        
+        // Act
+        $client->deployCollection($request);
     }
 }

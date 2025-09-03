@@ -2,10 +2,10 @@
 
 namespace DVB\Core\SDK\Tests\Unit\DTOs;
 
-use DVB\Core\SDK\DTOs\DeployCollectionWithImageRequestDTO;
+use DVB\Core\SDK\DTOs\DeployCollectionRequestDTO;
 use DVB\Core\SDK\Tests\TestCase;
 
-class DeployCollectionWithImageRequestDTOTest extends TestCase
+class DeployCollectionRequestDTOTest extends TestCase
 {
     public function test_it_can_be_instantiated_with_all_parameters(): void
     {
@@ -13,7 +13,7 @@ class DeployCollectionWithImageRequestDTOTest extends TestCase
         $imageResource = fopen('php://memory', 'rb');
         
         // Act
-        $dto = new DeployCollectionWithImageRequestDTO(
+        $dto = new DeployCollectionRequestDTO(
             chainId: 1,
             ownerAddress: '0xowner',
             name: 'Test Collection',
@@ -51,7 +51,7 @@ class DeployCollectionWithImageRequestDTOTest extends TestCase
         $this->expectExceptionMessage('Image resource is required and must be a valid resource');
         
         // Act
-        new DeployCollectionWithImageRequestDTO(
+        new DeployCollectionRequestDTO(
             chainId: 1,
             ownerAddress: '0xowner',
             name: 'Test Collection',
@@ -69,7 +69,7 @@ class DeployCollectionWithImageRequestDTOTest extends TestCase
         $this->expectExceptionMessage('Image resource is required and must be a valid resource');
         
         // Act
-        new DeployCollectionWithImageRequestDTO(
+        new DeployCollectionRequestDTO(
             chainId: 1,
             ownerAddress: '0xowner',
             name: 'Test Collection',
@@ -84,7 +84,7 @@ class DeployCollectionWithImageRequestDTOTest extends TestCase
     {
         // Arrange
         $imageResource = fopen('php://memory', 'rb');
-        $dto = new DeployCollectionWithImageRequestDTO(
+        $dto = new DeployCollectionRequestDTO(
             chainId: 1,
             ownerAddress: '0xowner',
             name: 'Test Collection',
@@ -123,7 +123,7 @@ class DeployCollectionWithImageRequestDTOTest extends TestCase
     {
         // Arrange
         $imageResource = fopen('php://memory', 'rb');
-        $dto = new DeployCollectionWithImageRequestDTO(
+        $dto = new DeployCollectionRequestDTO(
             chainId: 1,
             ownerAddress: '0xowner',
             name: 'Test Collection',
@@ -154,7 +154,7 @@ class DeployCollectionWithImageRequestDTOTest extends TestCase
     {
         // Arrange
         $imageResource = fopen('php://memory', 'rb');
-        $dto = new DeployCollectionWithImageRequestDTO(
+        $dto = new DeployCollectionRequestDTO(
             chainId: 1,
             ownerAddress: '0xowner',
             name: 'Test Collection',
@@ -178,7 +178,7 @@ class DeployCollectionWithImageRequestDTOTest extends TestCase
     {
         // Arrange
         $imageResource = fopen('php://memory', 'rb');
-        $dto = new DeployCollectionWithImageRequestDTO(
+        $dto = new DeployCollectionRequestDTO(
             chainId: 1,
             ownerAddress: '0xowner',
             name: 'Test Collection',

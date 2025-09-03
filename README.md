@@ -87,6 +87,22 @@ $deployRequest = new DeployCollectionRequestDTO(
 );
 $deployedCollection = $client->deployCollection($deployRequest);
 
+// Deploy a new collection (image is now required)
+$imageResource = fopen('/path/to/image.png', 'r');
+$deployRequest = new DeployCollectionRequestDTO(
+    chainId: 1,
+    ownerAddress: '0xowner_address',
+    name: 'My Collection',
+    quantity: 100,
+    enableFlexibleMint: true,
+    enableSoulbound: false,
+    imageResource: $imageResource // Image is now a required parameter
+);
+$deployedCollection = $client->deployCollection($deployRequest);
+
+// Don't forget to close the file resource when done
+fclose($imageResource);
+
 // Get collection details
 $collectionDetails = $client->getCollectionDetails('0xcontract_address', 1);
 

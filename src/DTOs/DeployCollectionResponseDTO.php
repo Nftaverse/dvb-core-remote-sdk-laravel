@@ -4,13 +4,9 @@ namespace DVB\Core\SDK\DTOs;
 
 class DeployCollectionResponseDTO extends ApiResponse
 {
-    /** @var string|null */
-    public ?string $data;
-
     public function __construct(int $code, string $message, ?string $data = null)
     {
-        parent::__construct($code, $message);
-        $this->data = $data;
+        parent::__construct($code, $message, $data);
     }
 
     public static function fromArray(array $data): self

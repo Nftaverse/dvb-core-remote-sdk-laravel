@@ -103,7 +103,38 @@ class CollectionClient extends DvbBaseClient
      */
     public function deployCollection(DeployCollectionRequestDTO $request): DeployCollectionResponseDTO
     {
-        $response = $this->post('collection', [], $request->toArray());
+        // 檢查是否為包含圖片的請求
+        if (method_exists($request, 'hasImage') && $request->hasImage()) {
+            // 使用 multipart 格式上傳圖片和數據
+            $data = $request->toArray();
+            $multipart = [];
+            
+            // 添加所有表單數據
+            foreach ($data as $key => $value) {
+                $multipart[] = [
+                    'name' => $key,
+                    'contents' => $value
+                ];
+            }
+            
+            // 添加圖片資源
+            $multipart[] = [
+                'name' => 'image',
+                'contents' => $request->getImageResource()
+            ];
+            
+            $response = $this->request('POST', 'collection', [
+                'multipart' => $multipart
+            ]);
+        } else {
+            // 驗證是否需要圖片資源
+            if (property_exists($request, 'imageResource') && $request->imageResource === null) {
+                throw new \InvalidArgumentException('Image resource is required for collection deployment');
+            }
+            
+            $response = $this->post('collection', [], $request->toArray());
+        }
+        
         return DeployCollectionResponseDTO::fromArray($response);
     }
 

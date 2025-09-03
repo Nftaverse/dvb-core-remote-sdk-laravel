@@ -148,33 +148,14 @@ class CollectionClient extends DvbBaseClient
             // 重新索引數組
             $multipart = array_values($multipart);
             
-            // 調試輸出
-            echo "Multipart data:\n";
-            foreach ($multipart as $item) {
-                echo "  - {$item['name']}: " . (is_resource($item['contents']) ? '[RESOURCE]' : $item['contents']) . "\n";
-            }
-            
             $response = $this->request('POST', 'collection', [
                 'multipart' => $multipart
             ]);
         } else {
-            // 如果沒有圖片資源，使用 form_params
+            // 如果沒有圖片資源，使用 JSON 請求
             $data = $request->toArray();
             
-            // 調試輸出
-            echo "Form params data:\n";
-            foreach ($data as $key => $value) {
-                echo "  - {$key}: " . (is_resource($value) ? '[RESOURCE]' : $value) . "\n";
-            }
-            
-            // 再次檢查布爾值是否正確轉換
-            foreach ($data as $key => $value) {
-                if (is_bool($value)) {
-                    echo "WARNING: Boolean value found in form data: {$key} = " . ($value ? 'true' : 'false') . "\n";
-                }
-            }
-            
-            $response = $this->postFormData('collection', $data);
+            $response = $this->post('collection', $data);
         }
         
         return DeployCollectionResponseDTO::fromArray($response);

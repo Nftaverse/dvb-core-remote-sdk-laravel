@@ -13,7 +13,7 @@ class CollectionDeployStatusResponseDTO extends ApiResponse
         
         if (is_array($data)) {
             $this->status = $data['status'] ?? '';
-            $this->collection = isset($data['collection']) ? CollectionDTO::fromArray($data['collection']) : null;
+            $this->collection = isset($data['collection']) && is_array($data['collection']) ? CollectionDTO::fromArray($data['collection']) : null;
         } else {
             $this->status = '';
             $this->collection = null;

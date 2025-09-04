@@ -136,4 +136,51 @@ class CollectionClientTest extends TestCase
         $this->assertEquals('Success', $result->message);
         $this->assertEquals('job123', $result->data);
     }
+    
+    public function test_get_collection_deploy_status_returns_collection_deploy_status_response_dto(): void
+    {
+        // Arrange
+        $httpClient = $this->createMock(ClientInterface::class);
+        $logger = $this->createMock(LoggerInterface::class);
+        
+        $client = new DvbApiClient($httpClient, $logger, 'test-key');
+        
+        $expectedResponse = [
+            'code' => 200,
+            'message' => 'Success',
+            'data' => [
+                'status' => 'listing',
+                'collection' => [
+                    'chain_id' => 1,
+                    'address' => '0x123',
+                    'name' => 'Test Collection',
+                    'symbol' => 'TEST',
+                    'decimals' => 0,
+                    'total_supply' => 1000,
+                    'royalty' => 0.1,
+                    'contract_type' => 'ERC721',
+                    'is_flexible_mint' => true,
+                    'is_jcd' => false,
+                    'created_at' => 1234567890,
+                    'updated_at' => 1234567890
+                ]
+            ]
+        ];
+        
+        $httpClient->expects($this->once())
+            ->method('request')
+            ->with('GET', 'https://dev-epoch.nft-investment.io/api/remote/v1/collection/deploy-status/launchpad123')
+            ->willReturn(new Response(200, [], json_encode($expectedResponse)));
+        
+        // Act
+        $result = $client->getCollectionDeployStatus('launchpad123');
+        
+        // Assert
+        $this->assertInstanceOf(\DVB\Core\SDK\DTOs\CollectionDeployStatusResponseDTO::class, $result);
+        $this->assertEquals(200, $result->code);
+        $this->assertEquals('Success', $result->message);
+        $this->assertEquals('listing', $result->status);
+        $this->assertInstanceOf(\DVB\Core\SDK\DTOs\CollectionDTO::class, $result->collection);
+        $this->assertTrue($result->isDeployed());
+    }
 }

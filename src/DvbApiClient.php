@@ -20,6 +20,7 @@ use DVB\Core\SDK\DTOs\CollectionEventListResponseDTO;
 use DVB\Core\SDK\DTOs\CheckCollectionResponseDTO;
 use DVB\Core\SDK\DTOs\DeployCollectionRequestDTO;
 use DVB\Core\SDK\DTOs\DeployCollectionResponseDTO;
+use DVB\Core\SDK\DTOs\CollectionDeployStatusResponseDTO;
 use DVB\Core\SDK\DTOs\CollectionDetailResponseDTO;
 use DVB\Core\SDK\DTOs\MintNftRequestDTO;
 use DVB\Core\SDK\DTOs\MintNftResponseDTO;
@@ -276,6 +277,11 @@ class DvbApiClient extends DvbBaseClient
     public function mintNft(MintNftRequestDTO $request): MintNftResponseDTO
     {
         return $this->collectionClient->mintNft($request);
+    }
+
+    public function getCollectionDeployStatus(string $launchpadId): CollectionDeployStatusResponseDTO
+    {
+        return $this->collectionClient->getCollectionDeployStatus($launchpadId);
     }
 
     // NFT methods

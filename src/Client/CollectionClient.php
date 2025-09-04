@@ -7,6 +7,7 @@ use DVB\Core\SDK\DTOs\CollectionEventListResponseDTO;
 use DVB\Core\SDK\DTOs\CheckCollectionResponseDTO;
 use DVB\Core\SDK\DTOs\DeployCollectionRequestDTO;
 use DVB\Core\SDK\DTOs\DeployCollectionResponseDTO;
+use DVB\Core\SDK\DTOs\CollectionDeployStatusResponseDTO;
 use DVB\Core\SDK\DTOs\CollectionDetailResponseDTO;
 use DVB\Core\SDK\DTOs\MintNftRequestDTO;
 use DVB\Core\SDK\DTOs\MintNftResponseDTO;
@@ -188,5 +189,18 @@ class CollectionClient extends DvbBaseClient
     {
         $response = $this->post('collection/mint-nft', [], $request->toArray());
         return MintNftResponseDTO::fromArray($response);
+    }
+
+    /**
+     * Get collection deploy status.
+     *
+     * @param string $launchpadId
+     * @return \DVB\Core\SDK\DTOs\CollectionDeployStatusResponseDTO
+     * @throws \DVB\Core\SDK\Exceptions\DvbApiException
+     */
+    public function getCollectionDeployStatus(string $launchpadId): CollectionDeployStatusResponseDTO
+    {
+        $response = $this->get("collection/deploy-status/{$launchpadId}");
+        return CollectionDeployStatusResponseDTO::fromArray($response);
     }
 }

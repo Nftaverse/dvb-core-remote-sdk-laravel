@@ -179,7 +179,7 @@ class CollectionClientTest extends TestCase
         $this->assertInstanceOf(\DVB\Core\SDK\DTOs\CollectionDeployStatusResponseDTO::class, $result);
         $this->assertEquals(200, $result->code);
         $this->assertEquals('Success', $result->message);
-        $this->assertEquals('listing', $result->status);
+        $this->assertEquals(\DVB\Core\SDK\Enums\CollectionDeployStatusEnum::LISTING, $result->status);
         $this->assertInstanceOf(\DVB\Core\SDK\DTOs\CollectionDTO::class, $result->collection);
         $this->assertTrue($result->isDeployed());
     }

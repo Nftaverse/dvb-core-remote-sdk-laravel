@@ -27,8 +27,8 @@ class DeployCollectionRequestDTOTest extends TestCase
             imageUrl: 'https://example.com/image.jpg',
             contractMetadataUrl: 'https://example.com/metadata',
             contractBaseUrl: 'https://example.com/base',
-            team: [['name' => 'Test Team']],
-            roadmap: [['phase' => 'Phase 1']],
+            team: 'Test Team',
+            roadmap: 'Phase 1',
             enableOwnerSignature: true,
             royalty: 5,
             receiveRoyaltyAddress: '0xroyalty',
@@ -55,8 +55,8 @@ class DeployCollectionRequestDTOTest extends TestCase
         $this->assertEquals('https://example.com/image.jpg', $dto->imageUrl);
         $this->assertEquals('https://example.com/metadata', $dto->contractMetadataUrl);
         $this->assertEquals('https://example.com/base', $dto->contractBaseUrl);
-        $this->assertEquals([['name' => 'Test Team']], $dto->team);
-        $this->assertEquals([['phase' => 'Phase 1']], $dto->roadmap);
+        $this->assertEquals('Test Team', $dto->team);
+        $this->assertEquals('Phase 1', $dto->roadmap);
         $this->assertTrue($dto->enableOwnerSignature);
         $this->assertEquals(5, $dto->royalty);
         $this->assertEquals('0xroyalty', $dto->receiveRoyaltyAddress);
@@ -128,8 +128,8 @@ class DeployCollectionRequestDTOTest extends TestCase
             imageUrl: 'https://example.com/image.jpg',
             contractMetadataUrl: 'https://example.com/metadata',
             contractBaseUrl: 'https://example.com/base',
-            team: [['name' => 'Test Team']],
-            roadmap: [['phase' => 'Phase 1']],
+            team: 'Test Team',
+            roadmap: 'Phase 1',
             enableOwnerSignature: true,
             royalty: 5,
             receiveRoyaltyAddress: '0xroyalty',
@@ -159,8 +159,8 @@ class DeployCollectionRequestDTOTest extends TestCase
             'image_url' => 'https://example.com/image.jpg',
             'contract_metadata_url' => 'https://example.com/metadata',
             'contract_base_url' => 'https://example.com/base',
-            'team' => '[{"name":"Test Team"}]',
-            'roadmap' => '[{"phase":"Phase 1"}]',
+            'team' => '"Test Team"',
+            'roadmap' => '"Phase 1"',
             'enable_owner_signature' => '1',
             'royalty' => 5,
             'receive_royalty_address' => '0xroyalty',
@@ -203,6 +203,7 @@ class DeployCollectionRequestDTOTest extends TestCase
             'quantity' => 100,
             'enable_flexible_mint' => '1',
             'enable_soulbound' => '0',
+            'enable_blind' => '0',
         ], $array);
         
         // Clean up

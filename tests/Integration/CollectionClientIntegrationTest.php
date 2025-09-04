@@ -21,7 +21,7 @@ class CollectionClientIntegrationTest extends IntegrationTestCase
 
         // 獲取支持的網絡列表
         $networksResponse = $this->getClient()->getNetworks();
-        $chainId = $networksResponse->data[0]->chain_id ?? 1; // 默認使用 1 (Ethereum mainnet)
+        $chainId = $networksResponse->data->items[0]->chainId ?? 1; // 默認使用 1 (Ethereum mainnet)
 
         // 創建 DeployCollectionRequestDTO
         $request = new DeployCollectionRequestDTO(

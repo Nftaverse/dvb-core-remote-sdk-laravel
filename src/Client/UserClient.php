@@ -10,20 +10,41 @@ class UserClient extends DvbBaseClient
     /**
      * Create a new user.
      *
-     * @param string $email
+     * @param string|null $email
      * @param string|null $name
      * @param string|null $phone
+     * @param string|null $ssoUid
+     * @param string|null $type
+     * @param string|null $defaultPassword
      * @return UserResponseDTO
      * @throws \DVB\Core\SDK\Exceptions\DvbApiException
+     * @throws \InvalidArgumentException
      */
-    public function createUser(string $email, ?string $name = null, ?string $phone = null): UserResponseDTO
+    public function createUser(?string $email = null, ?string $name = null, ?string $phone = null, ?string $ssoUid = null, ?string $type = null, ?string $defaultPassword = null): UserResponseDTO
     {
-        $query = ['email' => $email];
+        // Validate that at least one of email, phone, or ssoUid is provided
+        if ($email === null && $phone === null && $ssoUid === null) {
+            throw new \InvalidArgumentException('At least one of email, phone, or ssoUid must be provided');
+        }
+
+        $query = [];
+        if ($email !== null) {
+            $query['email'] = $email;
+        }
         if ($name !== null) {
             $query['name'] = $name;
         }
         if ($phone !== null) {
             $query['phone'] = $phone;
+        }
+        if ($ssoUid !== null) {
+            $query['sso_uid'] = $ssoUid;
+        }
+        if ($type !== null) {
+            $query['type'] = $type;
+        }
+        if ($defaultPassword !== null) {
+            $query['NFTIV_event_default_password'] = $defaultPassword;
         }
         $response = $this->post('user', [], $query);
         return UserResponseDTO::fromArray($response);

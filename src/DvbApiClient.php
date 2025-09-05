@@ -196,9 +196,9 @@ class DvbApiClient extends DvbBaseClient
     }
 
     // User methods
-    public function createUser(string $email, ?string $name = null, ?string $phone = null): UserResponseDTO
+    public function createUser(?string $email = null, ?string $name = null, ?string $phone = null, ?string $ssoUid = null, ?string $type = null, ?string $defaultPassword = null): UserResponseDTO
     {
-        return $this->userClient->createUser($email, $name, $phone);
+        return $this->userClient->createUser($email, $name, $phone, $ssoUid, $type, $defaultPassword);
     }
 
     public function getUser(string $identifier): UserResponseDTO

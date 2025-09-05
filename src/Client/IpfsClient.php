@@ -26,7 +26,7 @@ class IpfsClient extends DvbBaseClient
                 ],
                 [
                     'name'     => 'to_cdn',
-                    'contents' => $toCdn ? 'true' : 'false',
+                    'contents' => $toCdn ? '1' : '0',
                 ],
             ],
         ]);

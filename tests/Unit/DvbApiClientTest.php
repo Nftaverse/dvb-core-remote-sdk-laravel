@@ -484,10 +484,23 @@ class DvbApiClientTest extends TestCase
         
         $expectedResponse = [
             'code' => 200,
-            'message' => 'Success',
+            'message' => 'Operation successful',
             'data' => [
-                'jobId' => 'job123',
-                'status' => 'completed'
+                [
+                    'token_id' => 1,
+                    'network_id' => 'ethereum',
+                    'token_address' => '0x1234567890123456789012345678901234567890',
+                    'contract_type' => 'ERC721',
+                    'name' => 'Test NFT',
+                    'status' => 'minted',
+                    'description' => 'Test NFT Description',
+                    'asset' => 'https://example.com/asset.png',
+                    'asset_type' => 'image/png',
+                    'minter_address' => '0xabcdef1234567890abcdef1234567890abcdef12',
+                    'reference' => 'ref123',
+                    'created_at' => '2023-01-01T00:00:00Z',
+                    'updated_at' => '2023-01-01T00:00:00Z'
+                ]
             ]
         ];
         
@@ -502,8 +515,22 @@ class DvbApiClientTest extends TestCase
         // Assert
         $this->assertInstanceOf(NftJobDetailsResponseDTO::class, $result);
         $this->assertEquals(200, $result->code);
-        $this->assertEquals('job123', $result->data->jobId);
-        $this->assertEquals('completed', $result->data->status);
+        $this->assertEquals('Operation successful', $result->message);
+        $this->assertCount(1, $result->data);
+        $this->assertInstanceOf(\DVB\Core\SDK\DTOs\MintNftDetailResourceDTO::class, $result->data[0]);
+        $this->assertEquals(1, $result->data[0]->token_id);
+        $this->assertEquals('ethereum', $result->data[0]->network_id);
+        $this->assertEquals('0x1234567890123456789012345678901234567890', $result->data[0]->token_address);
+        $this->assertEquals('ERC721', $result->data[0]->contract_type);
+        $this->assertEquals('Test NFT', $result->data[0]->name);
+        $this->assertEquals('minted', $result->data[0]->status);
+        $this->assertEquals('Test NFT Description', $result->data[0]->description);
+        $this->assertEquals('https://example.com/asset.png', $result->data[0]->asset);
+        $this->assertEquals('image/png', $result->data[0]->asset_type);
+        $this->assertEquals('0xabcdef1234567890abcdef1234567890abcdef12', $result->data[0]->minter_address);
+        $this->assertEquals('ref123', $result->data[0]->reference);
+        $this->assertEquals('2023-01-01T00:00:00Z', $result->data[0]->created_at);
+        $this->assertEquals('2023-01-01T00:00:00Z', $result->data[0]->updated_at);
     }
 
     public function test_create_nft_event_returns_check_collection_response_dto()

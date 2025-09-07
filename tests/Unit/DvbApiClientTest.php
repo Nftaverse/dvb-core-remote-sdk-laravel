@@ -1004,7 +1004,7 @@ class DvbApiClientTest extends TestCase
         $this->assertEquals('https://ipfs.example.com/QmFolder123', $result->data->url);
     }
 
-    public function test_upload_json_to_ipfs_returns_ipfs_upload_response_dto()
+    public function test_upload_json_to_ipfs_returns_ipfs_json_upload_response_dto()
     {
         // Arrange
         $httpClient = $this->createMock(ClientInterface::class);
@@ -1015,16 +1015,15 @@ class DvbApiClientTest extends TestCase
         $expectedResponse = [
             'code' => 200,
             'message' => 'Success',
-            'data' => [
-                'cid' => 'QmJson123',
-                'url' => 'https://ipfs.example.com/QmJson123'
-            ]
+            'cid' => 'QmJson123',
+            'url' => 'https://ipfs.example.com/QmJson123'
         ];
         
         $httpClient->expects($this->once())
             ->method('request')
             ->with('POST', 'https://dev-epoch.nft-investment.io/api/remote/v1/ipfs/upload-json', $this->callback(function ($options) {
-                return isset($options['json']['json']) && $options['json']['json'] === json_encode(['key' => 'value']);
+                return isset($options['json']['json']) && $options['json']['json'] === json_encode(['key' => 'value'])
+                    && isset($options['query']['to_cdn']) && $options['query']['to_cdn'] === true;
             }))
             ->willReturn(new Response(200, [], json_encode($expectedResponse)));
         
@@ -1032,7 +1031,7 @@ class DvbApiClientTest extends TestCase
         $result = $client->uploadJsonToIpfs(['key' => 'value']);
         
         // Assert
-        $this->assertInstanceOf(IpfsUploadResponseDTO::class, $result);
+        $this->assertInstanceOf(\DVB\Core\SDK\DTOs\IpfsJsonUploadResponseDTO::class, $result);
         $this->assertEquals(200, $result->code);
         $this->assertEquals('QmJson123', $result->data->cid);
         $this->assertEquals('https://ipfs.example.com/QmJson123', $result->data->url);

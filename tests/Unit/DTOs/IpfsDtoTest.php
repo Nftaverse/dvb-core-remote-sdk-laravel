@@ -6,6 +6,7 @@ use DVB\Core\SDK\DTOs\IpfsFileDataDTO;
 use DVB\Core\SDK\DTOs\IpfsFolderUploadResponseDTO;
 use DVB\Core\SDK\DTOs\IpfsStatsResponseDTO;
 use DVB\Core\SDK\DTOs\IpfsUploadResponseDTO;
+use DVB\Core\SDK\DTOs\IpfsJsonUploadResponseDTO;
 use DVB\Core\SDK\DTOs\IpfsUsageStatsDTO;
 use DVB\Core\SDK\Tests\TestCase;
 
@@ -49,6 +50,38 @@ class IpfsDtoTest extends TestCase
         $this->assertEquals(200, $dto->code);
         $this->assertInstanceOf(\DVB\Core\SDK\DTOs\IpfsFileDTO::class, $dto->data);
         $this->assertEquals('bafktestcid', $dto->data->cid);
+    }
+
+    public function test_ipfs_json_upload_response_dto_from_array()
+    {
+        $data = [
+            'code' => 200,
+            'message' => 'Success',
+            'cid' => 'bafkjsoncid',
+            'url' => 'https://ipfs.example.com/bafkjsoncid',
+        ];
+
+        $dto = IpfsJsonUploadResponseDTO::fromArray($data);
+
+        $this->assertInstanceOf(IpfsJsonUploadResponseDTO::class, $dto);
+        $this->assertEquals(200, $dto->code);
+        $this->assertInstanceOf(\DVB\Core\SDK\DTOs\IpfsFileDTO::class, $dto->data);
+        $this->assertEquals('bafkjsoncid', $dto->data->cid);
+    }
+
+    public function test_ipfs_json_upload_response_dto_with_null_data()
+    {
+        $data = [
+            'code' => 400,
+            'message' => 'Bad Request',
+        ];
+
+        $dto = IpfsJsonUploadResponseDTO::fromArray($data);
+
+        $this->assertInstanceOf(IpfsJsonUploadResponseDTO::class, $dto);
+        $this->assertEquals(400, $dto->code);
+        $this->assertEquals('Bad Request', $dto->message);
+        $this->assertNull($dto->data);
     }
 
     public function test_ipfs_folder_upload_response_dto_from_array()

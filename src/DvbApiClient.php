@@ -37,6 +37,7 @@ use DVB\Core\SDK\DTOs\PaymentMethodListResponseDTO;
 use DVB\Core\SDK\DTOs\NetworkListResponseDTO;
 use DVB\Core\SDK\DTOs\NetworkDetailResponseDTO;
 use DVB\Core\SDK\DTOs\IpfsUploadResponseDTO;
+use DVB\Core\SDK\DTOs\IpfsJsonUploadResponseDTO;
 use DVB\Core\SDK\DTOs\IpfsFolderUploadResponseDTO;
 use DVB\Core\SDK\DTOs\IpfsStatsResponseDTO;
 use DVB\Core\SDK\DTOs\CollectionListResponseDTO;
@@ -369,7 +370,7 @@ class DvbApiClient extends DvbBaseClient
         return $this->ipfsClient->uploadFolderToIpfs($files, $toCdn);
     }
 
-    public function uploadJsonToIpfs(array $jsonData, bool $toCdn = true): IpfsUploadResponseDTO
+    public function uploadJsonToIpfs(array $jsonData, bool $toCdn = true): IpfsJsonUploadResponseDTO
     {
         return $this->ipfsClient->uploadJsonToIpfs($jsonData, $toCdn);
     }

@@ -3,6 +3,7 @@
 namespace DVB\Core\SDK\Client;
 
 use DVB\Core\SDK\DTOs\IpfsUploadResponseDTO;
+use DVB\Core\SDK\DTOs\IpfsJsonUploadResponseDTO;
 use DVB\Core\SDK\DTOs\IpfsFolderUploadResponseDTO;
 use DVB\Core\SDK\DTOs\IpfsStatsResponseDTO;
 
@@ -67,11 +68,11 @@ class IpfsClient extends DvbBaseClient
      *
      * @param array $jsonData
      * @param bool $toCdn
-     * @return IpfsUploadResponseDTO
+     * @return IpfsJsonUploadResponseDTO
      * @throws \DVB\Core\SDK\Exceptions\DvbApiException
      * @throws \JsonException
      */
-    public function uploadJsonToIpfs(array $jsonData, bool $toCdn = true): IpfsUploadResponseDTO
+    public function uploadJsonToIpfs(array $jsonData, bool $toCdn = true): IpfsJsonUploadResponseDTO
     {
         try {
             $jsonString = json_encode($jsonData, JSON_THROW_ON_ERROR);
@@ -84,11 +85,15 @@ class IpfsClient extends DvbBaseClient
             );
         }
         
-        $response = $this->post('ipfs/upload-json', [
-            'json'   => $jsonString,
-            'to_cdn' => $toCdn,
+        $response = $this->request('POST', 'ipfs/upload-json', [
+            'json' => [
+                'json' => $jsonString,
+            ],
+            'query' => [
+                'to_cdn' => $toCdn,
+            ],
         ]);
-        return IpfsUploadResponseDTO::fromArray($response);
+        return IpfsJsonUploadResponseDTO::fromArray($response);
     }
 
     /**

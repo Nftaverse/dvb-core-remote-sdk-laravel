@@ -54,7 +54,7 @@ class IpfsClient extends DvbBaseClient
 
         $multipart[] = [
             'name'     => 'to_cdn',
-            'contents' => $toCdn ? 'true' : 'false',
+            'contents' => $toCdn ? '1' : '0',
         ];
 
         $response = $this->request('POST', 'ipfs/upload-files-to-folder', [

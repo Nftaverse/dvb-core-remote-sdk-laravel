@@ -947,10 +947,8 @@ class DvbApiClientTest extends TestCase
         $expectedResponse = [
             'code' => 200,
             'message' => 'Success',
-            'data' => [
-                'cid' => 'QmTest123',
-                'url' => 'https://ipfs.example.com/QmTest123'
-            ]
+            'cid' => 'QmTest123',
+            'url' => 'https://ipfs.example.com/QmTest123'
         ];
         
         $httpClient->expects($this->once())
@@ -981,10 +979,8 @@ class DvbApiClientTest extends TestCase
         $expectedResponse = [
             'code' => 200,
             'message' => 'Success',
-            'data' => [
-                'cid' => 'QmFolder123',
-                'url' => 'https://ipfs.example.com/QmFolder123'
-            ]
+            'folder_cid' => 'QmFolder123',
+            'folder_url' => 'https://ipfs.example.com/QmFolder123'
         ];
         
         $httpClient->expects($this->once())

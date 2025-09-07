@@ -15,7 +15,13 @@ class IpfsUploadResponseDTO extends ApiResponse
 
     public static function fromArray(array $data): self
     {
-        $file = isset($data['data']) ? IpfsFileDTO::fromArray($data['data']) : null;
+        // File upload response format - data is at root level
+        $fileData = null;
+        if (isset($data['cid']) && isset($data['url'])) {
+            $fileData = $data;
+        }
+        
+        $file = $fileData ? IpfsFileDTO::fromArray($fileData) : null;
 
         return new self(
             $data['code'] ?? 0,

@@ -38,10 +38,8 @@ class IpfsDtoTest extends TestCase
         $data = [
             'code' => 200,
             'message' => 'Success',
-            'data' => [
-                'cid' => 'bafktestcid',
-                'url' => 'https://ipfs.example.com/bafktestcid',
-            ]
+            'cid' => 'bafktestcid',
+            'url' => 'https://ipfs.example.com/bafktestcid',
         ];
 
         $dto = IpfsUploadResponseDTO::fromArray($data);
@@ -89,10 +87,8 @@ class IpfsDtoTest extends TestCase
         $data = [
             'code' => 200,
             'message' => 'Success',
-            'data' => [
-                'cid' => 'bafyfolder',
-                'url' => 'https://ipfs.example.com/bafyfolder',
-            ]
+            'folder_cid' => 'bafyfolder',
+            'folder_url' => 'https://ipfs.example.com/bafyfolder',
         ];
 
         $dto = IpfsFolderUploadResponseDTO::fromArray($data);

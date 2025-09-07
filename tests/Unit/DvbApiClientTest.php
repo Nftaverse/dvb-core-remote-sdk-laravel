@@ -1024,7 +1024,7 @@ class DvbApiClientTest extends TestCase
         $httpClient->expects($this->once())
             ->method('request')
             ->with('POST', 'https://dev-epoch.nft-investment.io/api/remote/v1/ipfs/upload-json', $this->callback(function ($options) {
-                return isset($options['json']['json']) && $options['json']['json'] === ['key' => 'value'];
+                return isset($options['json']['json']) && $options['json']['json'] === json_encode(['key' => 'value']);
             }))
             ->willReturn(new Response(200, [], json_encode($expectedResponse)));
         

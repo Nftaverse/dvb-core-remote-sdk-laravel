@@ -69,11 +69,23 @@ class IpfsClient extends DvbBaseClient
      * @param bool $toCdn
      * @return IpfsUploadResponseDTO
      * @throws \DVB\Core\SDK\Exceptions\DvbApiException
+     * @throws \JsonException
      */
     public function uploadJsonToIpfs(array $jsonData, bool $toCdn = true): IpfsUploadResponseDTO
     {
+        try {
+            $jsonString = json_encode($jsonData, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            throw new \DVB\Core\SDK\Exceptions\DvbApiException(
+                "Failed to encode data as JSON: " . $e->getMessage(), 
+                0, 
+                [], 
+                $e
+            );
+        }
+        
         $response = $this->post('ipfs/upload-json', [
-            'json'   => $jsonData,
+            'json'   => $jsonString,
             'to_cdn' => $toCdn,
         ]);
         return IpfsUploadResponseDTO::fromArray($response);

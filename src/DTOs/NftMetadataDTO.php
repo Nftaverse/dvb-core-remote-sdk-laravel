@@ -13,6 +13,8 @@ class NftMetadataDTO
      * @param string|null $animationUrl
      * @param string|null $backgroundColor
      * @param string|null $youtubeUrl
+     * @param int|null $expiresAt
+     * @param array|null $additionalData
      */
     public function __construct(
         public readonly string $name,
@@ -23,6 +25,8 @@ class NftMetadataDTO
         public readonly ?string $animationUrl = null,
         public readonly ?string $backgroundColor = null,
         public readonly ?string $youtubeUrl = null,
+        public readonly ?int $expiresAt = null,
+        public readonly ?array $additionalData = null,
     ) {
     }
 
@@ -36,6 +40,23 @@ class NftMetadataDTO
             }
         }
 
+        // 提取額外數據，排除已有的字段
+        $reservedKeys = [
+            'name', 'description', 'image', 'attributes', 
+            'external_url', 'externalUrl', 
+            'animation_url', 'animationUrl', 
+            'background_color', 'backgroundColor', 
+            'youtube_url', 'youtubeUrl',
+            'expires_at', 'expiresAt'
+        ];
+        
+        $additionalData = [];
+        foreach ($data as $key => $value) {
+            if (!in_array($key, $reservedKeys)) {
+                $additionalData[$key] = $value;
+            }
+        }
+
         return new self(
             $data['name'] ?? '',
             $data['description'] ?? '',
@@ -45,6 +66,8 @@ class NftMetadataDTO
             $data['animation_url'] ?? $data['animationUrl'] ?? null,
             $data['background_color'] ?? $data['backgroundColor'] ?? null,
             $data['youtube_url'] ?? $data['youtubeUrl'] ?? null,
+            $data['expires_at'] ?? $data['expiresAt'] ?? null,
+            $additionalData ?: null,
         );
     }
 }
